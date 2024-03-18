@@ -654,7 +654,7 @@ class BaseBuild {
     }
 
     private func createPlist(path: String, name: String, minVersion: String, platform: String) {
-        let identifier = "com.kintan.ksplayer." + name
+        let identifier = name.replacingOccurrences(of: "_", with: "-")
         let content = """
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -673,19 +673,15 @@ class BaseBuild {
         <key>CFBundlePackageType</key>
         <string>FMWK</string>
         <key>CFBundleShortVersionString</key>
-        <string>87.88.520</string>
+        <string>1.0</string>
         <key>CFBundleVersion</key>
-        <string>87.88.520</string>
-        <key>CFBundleSignature</key>
-        <string>????</string>
+        <string>1</string>
         <key>MinimumOSVersion</key>
         <string>\(minVersion)</string>
         <key>CFBundleSupportedPlatforms</key>
         <array>
         <string>\(platform)</string>
         </array>
-        <key>NSPrincipalClass</key>
-        <string></string>
         </dict>
         </plist>
         """
