@@ -612,6 +612,9 @@ class BaseBuild {
         }
         arguments.append(output)
         try Utility.launch(path: "/usr/bin/lipo", arguments: arguments)
+        if !isFramework {
+            return frameworkDir.path
+        }
         try FileManager.default.createDirectory(at: frameworkDir + "Modules", withIntermediateDirectories: true, attributes: nil)
         var modulemap = """
         framework module \(framework) [system] {
@@ -629,8 +632,28 @@ class BaseBuild {
         }
         """
         FileManager.default.createFile(atPath: frameworkDir.path + "/Modules/module.modulemap", contents: modulemap.data(using: .utf8), attributes: nil)
-        createPlist(path: frameworkDir.path + "/Info.plist", name: framework, minVersion: platform.minVersion, platform: platform.sdk)
+        var infoPath = frameworkDir
+        if platform == .macos {
+            infoPath = infoPath + "Resources"
+            try FileManager.default.createDirectory(at: infoPath, withIntermediateDirectories: true, attributes: nil)
+        }
+        createPlist(path: infoPath + "Info.plist", name: framework, minVersion: platform.minVersion, platform: platform.sdk)
         return frameworkDir.path
+    }
+
+    private func ceateMacOSFramework(url: URL) throws {
+        let version = url + "Versions/A"
+        try FileManager.default.createDirectory(at: version + "Resources", withIntermediateDirectories: true, attributes: nil)
+        try FileManager.default.createSymbolicLink(at: url + "Versions/Current", withDestinationURL: version)
+        try FileManager.default.moveItem(at: url + "Modules", to: version + "Modules")
+        try FileManager.default.createSymbolicLink(at: url + "Modules", withDestinationURL: version + "Modules")
+        try FileManager.default.moveItem(at: url + "Headers", to: version + "Headers")
+        try FileManager.default.createSymbolicLink(at: url + "Headers", withDestinationURL: version + "Headers")
+        try FileManager.default.moveItem(at: url + "Info.plist", to: version + "Resources/Info.plist")
+        try FileManager.default.createSymbolicLink(at: url + "Resources", withDestinationURL: version + "Resources")
+        let name = String(url.lastPathComponent.split(separator: ".").first ?? "")
+        try FileManager.default.moveItem(at: url + name, to: version + name)
+        try FileManager.default.createSymbolicLink(at: url + name, withDestinationURL: version + name)
     }
 
     var isFramework: Bool {
@@ -653,7 +676,7 @@ class BaseBuild {
         []
     }
 
-    private func createPlist(path: String, name: String, minVersion: String, platform: String) {
+    private func createPlist(path: URL, name: String, minVersion _: String, platform: String) {
         let identifier = name.replacingOccurrences(of: "_", with: "-")
         let minVersion = "100"
         let content = """
@@ -686,7 +709,7 @@ class BaseBuild {
         </dict>
         </plist>
         """
-        FileManager.default.createFile(atPath: path, contents: content.data(using: .utf8), attributes: nil)
+        FileManager.default.createFile(atPath: path.path, contents: content.data(using: .utf8), attributes: nil)
     }
 
     private func createMesonCrossFile(platform: PlatformType, arch: ArchType) -> URL {
