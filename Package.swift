@@ -46,6 +46,7 @@ let package = Package(
 //                "libsmbclient",
                 "Libavcodec", "Libavdevice", "Libavfilter", "Libavformat", "Libavutil", "Libswresample", "Libswscale",
             ],
+            resources: [.process("Resources")],
             linkerSettings: [
                 .linkedFramework("AudioToolbox"),
                 .linkedFramework("AVFAudio"),
