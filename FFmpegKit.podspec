@@ -20,7 +20,7 @@ Pod::Spec.new do |s|
     s.static_framework = true
     s.source_files = 'Sources/FFmpegKit/**/*.{h,c,m}'
     s.resource_bundles = {
-        'FFmpegKit_FFmpegKit' => ['Sources/FFmpegKit/Resources/*.xcprivacy']
+        'FFmpegKit_FFmpegKit' => ['Sources/FFmpegKit/Resources/*.*']
     }
     s.subspec 'FFmpegKit' do |ffmpeg|
         ffmpeg.libraries   = 'bz2', 'c++','expat', 'iconv', 'resolv', 'xml2', 'z'
