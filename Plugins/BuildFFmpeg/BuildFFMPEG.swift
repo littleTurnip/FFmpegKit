@@ -198,7 +198,6 @@ class BuildFFMPEG: BaseBuild {
             arguments.append("--enable-filter=yadif_videotoolbox")
             arguments.append("--enable-filter=scale_vt")
             arguments.append("--enable-filter=transpose_vt")
-        } else {
             arguments.append("--enable-encoder=h264_videotoolbox")
             arguments.append("--enable-encoder=hevc_videotoolbox")
             arguments.append("--enable-encoder=prores_videotoolbox")
