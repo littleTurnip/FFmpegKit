@@ -25,7 +25,6 @@ int ff_isom_write_vpcc(AVFormatContext *s, AVIOContext *pb,
 //int ff_isom_write_hvcc(AVIOContext *pb, const uint8_t *data, int size, int ps_array_completeness);
 //int ff_isom_write_av1c(AVIOContext *pb, const uint8_t *buf, int size, int write_seq_header);
 //#import <Libavformat/url.h>
-extern AVClass ffurl_context_class;
 
 typedef struct URLContext {
     const AVClass *av_class;    /**< information for av_log(). Set by url_open(). */

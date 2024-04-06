@@ -147,7 +147,7 @@ enum Library: String, CaseIterable {
     var version: String {
         switch self {
         case .FFmpeg:
-            return "n6.1"
+            return "n7.0"
         case .libfreetype:
             return "VER-2-13-2"
         case .libfribidi:
@@ -549,7 +549,7 @@ class BaseBuild {
         [library.rawValue]
     }
 
-    private func createXCFramework() throws {
+    func createXCFramework() throws {
         let frameworks = try frameworks()
         for framework in frameworks {
             var arguments = ["-create-xcframework"]
@@ -587,31 +587,8 @@ class BaseBuild {
         }
         try? FileManager.default.removeItem(at: frameworkDir)
         try FileManager.default.createDirectory(at: frameworkDir, withIntermediateDirectories: true, attributes: nil)
-        var arguments = ["-create"]
-        for arch in platform.architectures {
-            let prefix = thinDir(platform: platform, arch: arch)
-            if !FileManager.default.fileExists(atPath: prefix.path) {
-                return nil
-            }
-            let libname = framework.hasPrefix("lib") || framework.hasPrefix("Lib") ? framework : "lib" + framework
-            var libPath = prefix + ["lib", "\(libname).a"]
-            if !FileManager.default.fileExists(atPath: libPath.path) {
-                libPath = prefix + ["lib", "\(libname).dylib"]
-            }
-            arguments.append(libPath.path)
-            var headerURL: URL = prefix + "include" + framework
-            if !FileManager.default.fileExists(atPath: headerURL.path) {
-                headerURL = prefix + "include"
-            }
-            try? FileManager.default.copyItem(at: headerURL, to: frameworkDir + "Headers")
-        }
-        arguments.append("-output")
-        var output = (frameworkDir + framework).path
-        if !isFramework {
-            output += ".a"
-        }
-        arguments.append(output)
-        try Utility.launch(path: "/usr/bin/lipo", arguments: arguments)
+        createFrameworkInclude(framework: framework, platform: platform, frameworkDir: frameworkDir)
+        try createFrameworkLib(framework: framework, platform: platform, frameworkDir: frameworkDir)
         if !isFramework {
             return frameworkDir.path
         }
@@ -639,6 +616,38 @@ class BaseBuild {
         }
         createPlist(path: infoPath + "Info.plist", name: framework, minVersion: platform.minVersion, platform: platform.sdk)
         return frameworkDir.path
+    }
+
+    func createFrameworkInclude(framework: String, platform: PlatformType, frameworkDir: URL) {
+        if let arch = platform.architectures.first {
+            let prefix = thinDir(platform: platform, arch: arch)
+            var headerURL: URL = prefix + "include" + framework
+            if !FileManager.default.fileExists(atPath: headerURL.path) {
+                headerURL = prefix + "include"
+            }
+            try? FileManager.default.copyItem(at: headerURL, to: frameworkDir + "Headers")
+        }
+    }
+
+    func createFrameworkLib(framework: String, platform: PlatformType, frameworkDir _: URL) throws {
+        let frameworkDir = URL.currentDirectory + [library.rawValue, platform.rawValue, "\(framework).framework"]
+        var arguments = ["-create"]
+        for arch in platform.architectures {
+            let prefix = thinDir(platform: platform, arch: arch)
+            let libname = framework.hasPrefix("lib") || framework.hasPrefix("Lib") ? framework : "lib" + framework
+            var libPath = prefix + ["lib", "\(libname).a"]
+            if !FileManager.default.fileExists(atPath: libPath.path) {
+                libPath = prefix + ["lib", "\(libname).dylib"]
+            }
+            arguments.append(libPath.path)
+        }
+        arguments.append("-output")
+        var output = (frameworkDir + framework).path
+        if !isFramework {
+            output += ".a"
+        }
+        arguments.append(output)
+        try Utility.launch(path: "/usr/bin/lipo", arguments: arguments)
     }
 
     private func ceateMacOSFramework(url: URL) throws {
