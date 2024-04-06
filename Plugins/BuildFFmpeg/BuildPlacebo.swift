@@ -45,9 +45,8 @@ class BuildVulkan: BaseBuild {
         try createXCFramework()
     }
 
-    override func createFrameworkInclude(framework: String, platform _: PlatformType, frameworkDir: URL) {
-        try? FileManager.default.copyItem(at: directoryURL + "Package/Release/MoltenVK/include/\(framework)", to: frameworkDir + "Headers")
-        try? FileManager.default.copyItem(at: directoryURL + "Package/Release/MoltenVK/include/vk_video", to: frameworkDir + "Headers/vk_video")
+    override func createFrameworkInclude(framework _: String, platform _: PlatformType, frameworkDir: URL) {
+        try? FileManager.default.copyItem(at: directoryURL + "Package/Release/MoltenVK/include", to: frameworkDir + "Headers")
     }
 
     override func createFrameworkLib(framework: String, platform: PlatformType, frameworkDir: URL) throws {

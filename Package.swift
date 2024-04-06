@@ -80,10 +80,11 @@ let package = Package(
             dependencies: [
                 "fftools",
                 "SDL2",
+            ],
+            cSettings: [
+                .headerSearchPath("../vulkan.xcframework/macos-arm64_x86_64/vulkan.framework/Headers"),
+                .define("VK_ENABLE_BETA_EXTENSIONS"),
             ]
-//            ,cxxSettings: [
-//                .unsafeFlags(["-I", "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1"]),
-//            ]
         ),
         .executableTarget(
             name: "ffprobe",
