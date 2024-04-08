@@ -221,8 +221,8 @@ class BuildFFMPEG: BaseBuild {
         if platform == .macos {
             arguments.append("--enable-outdev=audiotoolbox")
         }
-        if !([PlatformType.tvos, .tvsimulator, .xros, .xrsimulator].contains(platform)) {
-            // tvos17才支持AVCaptureDeviceInput
+        if [PlatformType.macos, .maccatalyst, .isimulator].contains(platform) {
+            // tvos17才支持AVCaptureDeviceInput, iOS会要求申请NSCameraUsageDescription权限，所以就不默认加了
 //            'defaultDeviceWithMediaType:' is unavailable: not available on visionOS
             arguments.append("--enable-indev=avfoundation")
         }
