@@ -32,7 +32,7 @@ let package = Package(
         .target(
             name: "FFmpegKit",
             dependencies: [
-                "vulkan",
+                "MoltenVK",
                 "libshaderc_combined",
                 "lcms2",
                 "libdav1d",
@@ -82,7 +82,6 @@ let package = Package(
                 "SDL2",
             ],
             cSettings: [
-                .headerSearchPath("../vulkan.xcframework/macos-arm64_x86_64/vulkan.framework/Headers"),
                 .define("VK_ENABLE_BETA_EXTENSIONS"),
             ]
         ),
@@ -132,8 +131,8 @@ let package = Package(
             )
         ),
         .binaryTarget(
-            name: "vulkan",
-            path: "Sources/vulkan.xcframework"
+            name: "MoltenVK",
+            path: "Sources/MoltenVK.xcframework"
         ),
         .binaryTarget(
             name: "libshaderc_combined",

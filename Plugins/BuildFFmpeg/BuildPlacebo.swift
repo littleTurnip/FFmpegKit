@@ -39,37 +39,31 @@ class BuildVulkan: BaseBuild {
             try Utility.launch(path: (directoryURL + "fetchDependencies").path, arguments: arguments, currentDirectoryURL: directoryURL)
         }
         arguments = platforms().map(\.name)
-        if !FileManager.default.fileExists(atPath: (directoryURL + "Package/Release/MoltenVK/static/MoltenVK.xcframework").path) || !BaseBuild.notRecompile {
+        let xcframeworkURL = directoryURL + "Package/Release/MoltenVK/static/MoltenVK.xcframework"
+        if !FileManager.default.fileExists(atPath: xcframeworkURL.path) || !BaseBuild.notRecompile {
             try Utility.launch(path: "/usr/bin/make", arguments: arguments, currentDirectoryURL: directoryURL)
         }
-        try createXCFramework()
-    }
-
-    override func createFrameworkInclude(framework _: String, platform _: PlatformType, frameworkDir: URL) {
-        try? FileManager.default.copyItem(at: directoryURL + "Package/Release/MoltenVK/include", to: frameworkDir + "Headers")
-    }
-
-    override func createFrameworkLib(framework: String, platform: PlatformType, frameworkDir: URL) throws {
-        try FileManager.default.copyItem(at: directoryURL + "Package/Release/MoltenVK/static/MoltenVK.xcframework/\(platform.frameworkName + "/libMoltenVK.a")", to: frameworkDir + framework)
-        var frameworks = ["CoreFoundation", "CoreGraphics", "Foundation", "IOSurface", "Metal", "QuartzCore"]
-        if platform == .macos {
-            frameworks.append("Cocoa")
-        } else {
-            frameworks.append("UIKit")
-        }
-        if !(platform == .tvos || platform == .tvsimulator) {
-            frameworks.append("IOKit")
-        }
-        let libframework = frameworks.map {
-            "-framework \($0)"
-        }.joined(separator: " ")
-        for arch in platform.architectures {
-            let thin = thinDir(platform: platform, arch: arch)
-            let prefix = thin + "lib/pkgconfig"
-            try? FileManager.default.removeItem(at: prefix)
-            try? FileManager.default.createDirectory(at: prefix, withIntermediateDirectories: true, attributes: nil)
-            let vulkanPC = prefix + "vulkan.pc"
-            let content = """
+        try? FileManager.default.copyItem(at: xcframeworkURL, to: URL.currentDirectory() + "../Sources/MoltenVK.xcframework")
+        for platform in platforms() {
+            var frameworks = ["CoreFoundation", "CoreGraphics", "Foundation", "IOSurface", "Metal", "QuartzCore"]
+            if platform == .macos {
+                frameworks.append("Cocoa")
+            } else {
+                frameworks.append("UIKit")
+            }
+            if !(platform == .tvos || platform == .tvsimulator) {
+                frameworks.append("IOKit")
+            }
+            let libframework = frameworks.map {
+                "-framework \($0)"
+            }.joined(separator: " ")
+            for arch in platform.architectures {
+                let thin = thinDir(platform: platform, arch: arch)
+                let prefix = thin + "lib/pkgconfig"
+                try? FileManager.default.removeItem(at: prefix)
+                try? FileManager.default.createDirectory(at: prefix, withIntermediateDirectories: true, attributes: nil)
+                let vulkanPC = prefix + "vulkan.pc"
+                let content = """
             prefix=\((directoryURL + "Package/Release/MoltenVK").path)
             includedir=${prefix}/include
             libdir=${prefix}/static/MoltenVK.xcframework/\(platform.frameworkName)
@@ -80,12 +74,10 @@ class BuildVulkan: BaseBuild {
             Libs: -L${libdir} -lMoltenVK -lc++ \(libframework)
             Cflags: -I${includedir}
             """
-            FileManager.default.createFile(atPath: vulkanPC.path, contents: content.data(using: .utf8), attributes: nil)
+                FileManager.default.createFile(atPath: vulkanPC.path, contents: content.data(using: .utf8), attributes: nil)
+            }
         }
     }
-//    override func frameworks() throws -> [String] {
-//        ["MoltenVK"]
-//    }
 }
 
 class BuildGlslang: BaseBuild {

@@ -112,41 +112,36 @@ class BuildFFMPEG: BaseBuild {
             try FileManager.default.copyItem(at: buildURL + "src/libpostproc/postprocess.h", to: fftoolsFile + "include/libpostproc/postprocess.h")
             try FileManager.default.copyItem(at: buildURL + "src/libpostproc/version_major.h", to: fftoolsFile + "include/libpostproc/version_major.h")
             try FileManager.default.copyItem(at: buildURL + "src/libpostproc/version.h", to: fftoolsFile + "include/libpostproc/version.h")
-            let ffplayFile = URL.currentDirectory + "../Sources/ffplay"
-            try? FileManager.default.removeItem(at: ffplayFile)
-            try FileManager.default.createDirectory(at: ffplayFile, withIntermediateDirectories: true)
-            let ffprobeFile = URL.currentDirectory + "../Sources/ffprobe"
-            try? FileManager.default.removeItem(at: ffprobeFile)
-            try FileManager.default.createDirectory(at: ffprobeFile, withIntermediateDirectories: true)
-            let ffmpegFile = URL.currentDirectory + "../Sources/ffmpeg"
-            try? FileManager.default.removeItem(at: ffmpegFile)
-            try FileManager.default.createDirectory(at: ffmpegFile + "include", withIntermediateDirectories: true)
+            let names = ["ffmpeg", "ffplay", "ffprobe"]
+            for name in names {
+                let file = URL.currentDirectory + "../Sources/\(name)"
+                try? FileManager.default.removeItem(at: file)
+                try FileManager.default.createDirectory(at: file + "include", withIntermediateDirectories: true)
+            }
             let fftools = buildURL + "src/fftools"
             let fileNames = try FileManager.default.contentsOfDirectory(atPath: fftools.path)
             for fileName in fileNames {
-                if fileName.hasPrefix("ffplay") {
-                    try FileManager.default.copyItem(at: fftools + fileName, to: ffplayFile + fileName)
-                } else if fileName.hasPrefix("ffprobe") {
-                    try FileManager.default.copyItem(at: fftools + fileName, to: ffprobeFile + fileName)
-                } else if fileName.hasPrefix("ffmpeg") {
+                if let name = names.first { fileName.hasPrefix($0) } {
                     if fileName.hasSuffix(".h") {
-                        try FileManager.default.copyItem(at: fftools + fileName, to: ffmpegFile + "include" + fileName)
+                        try FileManager.default.copyItem(at: fftools + fileName, to: URL.currentDirectory + "../Sources/\(name)" + "include" + fileName)
                     } else {
-                        try FileManager.default.copyItem(at: fftools + fileName, to: ffmpegFile + fileName)
+                        try FileManager.default.copyItem(at: fftools + fileName, to: URL.currentDirectory + "../Sources/\(name)" + fileName)
                     }
-                } else if fileName.hasSuffix(".h") {
-                    try FileManager.default.copyItem(at: fftools + fileName, to: fftoolsFile + "include" + fileName)
-                } else if fileName.hasSuffix(".c") {
-                    try FileManager.default.copyItem(at: fftools + fileName, to: fftoolsFile + fileName)
+                } else {
+                    if fileName.hasSuffix(".h") {
+                        try FileManager.default.copyItem(at: fftools + fileName, to: fftoolsFile + "include" + fileName)
+                    } else if fileName.hasSuffix(".c") {
+                        try FileManager.default.copyItem(at: fftools + fileName, to: fftoolsFile + fileName)
+                    }
                 }
             }
+            let vulkanURL = URL.currentDirectory + "\(Library.vulkan.rawValue)-\(Library.vulkan.version)" + "/External/Vulkan-Headers/include"
+            try? FileManager.default.copyItem(at: vulkanURL, to: URL.currentDirectory + "../Sources/ffplay/include")
             let prefix = scratch(platform: platform, arch: arch)
-            try? FileManager.default.removeItem(at: URL(fileURLWithPath: "/usr/local/bin/ffmpeg"))
-            try? FileManager.default.copyItem(at: prefix + "ffmpeg", to: URL(fileURLWithPath: "/usr/local/bin/ffmpeg"))
-            try? FileManager.default.removeItem(at: URL(fileURLWithPath: "/usr/local/bin/ffplay"))
-            try? FileManager.default.copyItem(at: prefix + "ffplay", to: URL(fileURLWithPath: "/usr/local/bin/ffplay"))
-            try? FileManager.default.removeItem(at: URL(fileURLWithPath: "/usr/local/bin/ffprobe"))
-            try? FileManager.default.copyItem(at: prefix + "ffprobe", to: URL(fileURLWithPath: "/usr/local/bin/ffprobe"))
+            for name in names {
+                try? FileManager.default.removeItem(at: URL(fileURLWithPath: "/usr/local/bin/\(name)"))
+                try? FileManager.default.copyItem(at: prefix + name, to: URL(fileURLWithPath: "/usr/local/bin/\(name)"))
+            }
         }
     }
 
