@@ -43,7 +43,9 @@ class BuildVulkan: BaseBuild {
         if !FileManager.default.fileExists(atPath: xcframeworkURL.path) || !BaseBuild.notRecompile {
             try Utility.launch(path: "/usr/bin/make", arguments: arguments, currentDirectoryURL: directoryURL)
         }
-        try? FileManager.default.copyItem(at: xcframeworkURL, to: URL.currentDirectory() + "../Sources/MoltenVK.xcframework")
+        let toURL = URL.currentDirectory() + "../Sources/MoltenVK.xcframework"
+        try FileManager.default.removeItem(at: toURL)
+        try FileManager.default.copyItem(at: xcframeworkURL, to: toURL)
         for platform in platforms() {
             var frameworks = ["CoreFoundation", "CoreGraphics", "Foundation", "IOSurface", "Metal", "QuartzCore"]
             if platform == .macos {
