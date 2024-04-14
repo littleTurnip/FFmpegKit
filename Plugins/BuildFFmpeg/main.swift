@@ -587,7 +587,7 @@ class BaseBuild {
         }
         try? FileManager.default.removeItem(at: frameworkDir)
         try FileManager.default.createDirectory(at: frameworkDir, withIntermediateDirectories: true, attributes: nil)
-        createFrameworkInclude(framework: framework, platform: platform, frameworkDir: frameworkDir)
+        try createFrameworkInclude(framework: framework, platform: platform, frameworkDir: frameworkDir)
         try createFrameworkLib(framework: framework, platform: platform, frameworkDir: frameworkDir)
         if !isFramework {
             return frameworkDir.path
@@ -618,7 +618,7 @@ class BaseBuild {
         return frameworkDir.path
     }
 
-    func createFrameworkInclude(framework: String, platform: PlatformType, frameworkDir: URL) {
+    func createFrameworkInclude(framework: String, platform: PlatformType, frameworkDir: URL) throws {
         if let arch = platform.architectures.first {
             let prefix = thinDir(platform: platform, arch: arch)
             var headerURL: URL = prefix + "include" + framework
