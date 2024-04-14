@@ -66,16 +66,16 @@ class BuildVulkan: BaseBuild {
                 try? FileManager.default.createDirectory(at: prefix, withIntermediateDirectories: true, attributes: nil)
                 let vulkanPC = prefix + "vulkan.pc"
                 let content = """
-            prefix=\((directoryURL + "Package/Release/MoltenVK").path)
-            includedir=${prefix}/include
-            libdir=${prefix}/static/MoltenVK.xcframework/\(platform.frameworkName)
+                prefix=\((directoryURL + "Package/Release/MoltenVK").path)
+                includedir=${prefix}/include
+                libdir=${prefix}/static/MoltenVK.xcframework/\(platform.frameworkName)
 
-            Name: Vulkan-Loader
-            Description: Vulkan Loader
-            Version: 1.2
-            Libs: -L${libdir} -lMoltenVK -lc++ \(libframework)
-            Cflags: -I${includedir}
-            """
+                Name: Vulkan-Loader
+                Description: Vulkan Loader
+                Version: 1.2
+                Libs: -L${libdir} -lMoltenVK -lc++ \(libframework)
+                Cflags: -I${includedir}
+                """
                 FileManager.default.createFile(atPath: vulkanPC.path, contents: content.data(using: .utf8), attributes: nil)
             }
         }
