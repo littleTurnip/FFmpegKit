@@ -60,11 +60,11 @@ class BuildFFMPEG: BaseBuild {
         return env
     }
 
-    override func createFrameworkLib(framework: String, platform: PlatformType, frameworkDir: URL) throws {
-        try super.createFrameworkLib(framework: framework, platform: platform, frameworkDir: frameworkDir)
+    override func createFrameworkInclude(framework: String, platform: PlatformType, frameworkDir: URL) throws {
         for arch in platform.architectures {
             try copyFile(platform: platform, arch: arch)
         }
+        try super.createFrameworkInclude(framework: framework, platform: platform, frameworkDir: frameworkDir)
     }
 
     private func copyFile(platform: PlatformType, arch: ArchType) throws {
