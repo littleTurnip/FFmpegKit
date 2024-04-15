@@ -117,8 +117,7 @@ class BuildFFMPEG: BaseBuild {
                 }
             }
             let fftools = buildURL + "src/fftools"
-            let fileNames = try FileManager.default.contentsOfDirectory(atPath: fftools.path)
-            for fileName in fileNames {
+            try FileManager.default.contentsOfDirectory(atPath: fftools.path).forEach { fileName in
                 if let name = names.first { fileName.hasPrefix($0) } {
                     if fileName.hasSuffix(".h") {
                         try FileManager.default.copyItem(at: fftools + fileName, to: URL.currentDirectory + "../Sources/\(name)" + "include" + fileName)
@@ -134,8 +133,9 @@ class BuildFFMPEG: BaseBuild {
                 }
             }
             for name in names {
-                try? FileManager.default.removeItem(at: URL(fileURLWithPath: "/usr/local/bin/\(name)"))
-                try? FileManager.default.copyItem(at: prefix + name, to: URL(fileURLWithPath: "/usr/local/bin/\(name)"))
+                let item = URL(fileURLWithPath: "/usr/local/bin/\(name)")
+                try? FileManager.default.removeItem(at: item)
+                try FileManager.default.copyItem(at: prefix + "bin" + name, to: item)
             }
         }
     }
