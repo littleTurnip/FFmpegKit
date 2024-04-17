@@ -43,9 +43,10 @@ let package = Package(
                 "libfontconfig",
                 .target(name: "libbluray", condition: .when(platforms: [.macOS])),
                 "gmp", "nettle", "hogweed", "gnutls",
-                "libsmbclient",
+//                "libsmbclient",
                 "Libavcodec", "Libavdevice", "Libavfilter", "Libavformat", "Libavutil", "Libswresample", "Libswscale",
             ],
+            resources: [.process("Resources")],
             linkerSettings: [
                 .linkedFramework("AudioToolbox"),
                 .linkedFramework("AVFAudio"),
@@ -227,10 +228,10 @@ let package = Package(
             name: "gnutls",
             path: "Sources/gnutls.xcframework"
         ),
-        .binaryTarget(
-            name: "libsmbclient",
-            path: "Sources/libsmbclient.xcframework"
-        ),
+//        .binaryTarget(
+//            name: "libsmbclient",
+//            path: "Sources/libsmbclient.xcframework"
+//        ),
 //        .binaryTarget(
 //            name: "libssl",
 //            path: "Sources/libssl.xcframework"
