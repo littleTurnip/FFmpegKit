@@ -317,7 +317,7 @@ class BuildFFMPEG: BaseBuild {
         "--enable-decoder=mjpeg", "--enable-decoder=mjpegb", "--enable-decoder=mpeg*", "--enable-decoder=mts2",
         "--enable-decoder=prores",
         "--enable-decoder=rv10", "--enable-decoder=rv20", "--enable-decoder=rv30", "--enable-decoder=rv40",
-        "--enable-decoder=snow", "--enable-decoder=svq3",
+        "--enable-decoder=svq3",
         "--enable-decoder=tscc", "--enable-decoder=tscc2", "--enable-decoder=txd",
         "--enable-decoder=wmv1", "--enable-decoder=wmv2", "--enable-decoder=wmv3",
         "--enable-decoder=vc1", "--enable-decoder=vp6", "--enable-decoder=vp6a", "--enable-decoder=vp6f",
@@ -327,7 +327,7 @@ class BuildFFMPEG: BaseBuild {
         "--enable-decoder=amr*", "--enable-decoder=ape", "--enable-decoder=cook",
         "--enable-decoder=dca", "--enable-decoder=dolby_e", "--enable-decoder=eac3*", "--enable-decoder=flac",
         "--enable-decoder=mp1*", "--enable-decoder=mp2*", "--enable-decoder=mp3*", "--enable-decoder=opus",
-        "--enable-decoder=pcm*", "--enable-decoder=sonic",
+        "--enable-decoder=pcm*",
         "--enable-decoder=truehd", "--enable-decoder=tta", "--enable-decoder=vorbis", "--enable-decoder=wma*", "--enable-decoder=wrapped_avframe",
         // 字幕
         "--enable-decoder=ass", "--enable-decoder=ccaption", "--enable-decoder=dvbsub", "--enable-decoder=dvdsub",

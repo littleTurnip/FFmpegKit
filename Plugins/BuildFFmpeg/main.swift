@@ -161,13 +161,13 @@ enum Library: String, CaseIterable {
         case .libmpv:
             return "v0.38.0"
         case .openssl:
-            return "openssl-3.2.1"
+            return "openssl-3.3.0"
         case .libsrt:
             return "v1.5.3"
         case .libsmbclient:
             return "samba-4.15.13"
         case .gnutls:
-            return "3.8.3"
+            return "3.8.5"
         case .nettle:
             return "nettle_3.9.1_release_20230601"
         case .libdav1d:
