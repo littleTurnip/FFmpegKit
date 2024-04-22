@@ -60,27 +60,28 @@ class BuildFFMPEG: BaseBuild {
         return env
     }
 
-    override func build(platform: PlatformType, arch: ArchType, buildURL: URL) throws {
-        try super.build(platform: platform, arch: arch, buildURL: buildURL)
+    override func createFrameworkInclude(framework: String, platform: PlatformType, frameworkDir: URL) throws {
+        for arch in platform.architectures {
+            try copyFile(platform: platform, arch: arch)
+        }
+        try super.createFrameworkInclude(framework: framework, platform: platform, frameworkDir: frameworkDir)
+    }
+
+    private func copyFile(platform: PlatformType, arch: ArchType) throws {
+        let buildURL = scratch(platform: platform, arch: arch)
         let prefix = thinDir(platform: platform, arch: arch)
         let lldbFile = URL.currentDirectory + "LLDBInitFile"
         if let data = FileManager.default.contents(atPath: lldbFile.path), var str = String(data: data, encoding: .utf8) {
             str.append("settings \(str.isEmpty ? "set" : "append") target.source-map \((buildURL + "src").path) \(directoryURL.path)\n")
             try str.write(toFile: lldbFile.path, atomically: true, encoding: .utf8)
         }
-        try FileManager.default.copyItem(at: buildURL + "config.h", to: prefix + "include/libavutil/config.h")
-        try FileManager.default.copyItem(at: buildURL + "config.h", to: prefix + "include/libavcodec/config.h")
-        try FileManager.default.copyItem(at: buildURL + "config.h", to: prefix + "include/libavformat/config.h")
-        try FileManager.default.copyItem(at: buildURL + "src/libavutil/getenv_utf8.h", to: prefix + "include/libavutil/getenv_utf8.h")
-        try FileManager.default.copyItem(at: buildURL + "src/libavutil/libm.h", to: prefix + "include/libavutil/libm.h")
-        try FileManager.default.copyItem(at: buildURL + "src/libavutil/thread.h", to: prefix + "include/libavutil/thread.h")
-        try FileManager.default.copyItem(at: buildURL + "src/libavutil/intmath.h", to: prefix + "include/libavutil/intmath.h")
-        try FileManager.default.copyItem(at: buildURL + "src/libavutil/mem_internal.h", to: prefix + "include/libavutil/mem_internal.h")
-        try FileManager.default.copyItem(at: buildURL + "src/libavutil/attributes_internal.h", to: prefix + "include/libavutil/attributes_internal.h")
-        try FileManager.default.copyItem(at: buildURL + "src/libavcodec/mathops.h", to: prefix + "include/libavcodec/mathops.h")
-        try FileManager.default.copyItem(at: buildURL + "src/libavformat/os_support.h", to: prefix + "include/libavformat/os_support.h")
+        try? FileManager.default.copyItem(at: buildURL + "config.h", to: prefix + "include/libavutil/config.h")
+        try? FileManager.default.copyItem(at: buildURL + "config.h", to: prefix + "include/libavcodec/config.h")
+        try? FileManager.default.copyItem(at: buildURL + "config.h", to: prefix + "include/libavformat/config.h")
+        for name in ["libavutil/getenv_utf8.h", "libavutil/libm.h", "libavutil/thread.h", "libavutil/intmath.h", "libavutil/mem_internal.h", "libavutil/attributes_internal.h", "libavcodec/mathops.h", "libavformat/os_support.h", "libavutil/internal.h"] {
+            try? FileManager.default.copyItem(at: buildURL + "src/\(name)", to: prefix + "include/\(name)")
+        }
         let internalPath = prefix + "include/libavutil/internal.h"
-        try FileManager.default.copyItem(at: buildURL + "src/libavutil/internal.h", to: internalPath)
         if let data = FileManager.default.contents(atPath: internalPath.path), var str = String(data: data, encoding: .utf8) {
             str = str.replacingOccurrences(of: """
             #include "timer.h"
@@ -93,60 +94,49 @@ class BuildFFMPEG: BaseBuild {
         if platform == .macos, arch.executable {
             let fftoolsFile = URL.currentDirectory + "../Sources/fftools"
             try? FileManager.default.removeItem(at: fftoolsFile)
-            if !FileManager.default.fileExists(atPath: (fftoolsFile + "include/compat").path) {
-                try FileManager.default.createDirectory(at: fftoolsFile + "include/compat", withIntermediateDirectories: true)
+            try ["compat", "libavdevice", "libpostproc"].forEach { name in
+                try FileManager.default.createDirectory(at: fftoolsFile + "include/\(name)", withIntermediateDirectories: true)
             }
-            try FileManager.default.copyItem(at: buildURL + "src/compat/va_copy.h", to: fftoolsFile + "include/compat/va_copy.h")
-            try FileManager.default.copyItem(at: buildURL + "config.h", to: fftoolsFile + "include/config.h")
-            try FileManager.default.copyItem(at: buildURL + "config_components.h", to: fftoolsFile + "include/config_components.h")
-            if !FileManager.default.fileExists(atPath: (fftoolsFile + "include/libavdevice").path) {
-                try FileManager.default.createDirectory(at: fftoolsFile + "include/libavdevice", withIntermediateDirectories: true)
+            try ["config.h", "config_components.h"].forEach { name in
+                try FileManager.default.copyItem(at: buildURL + name, to: fftoolsFile + "include/\(name)")
             }
-            try FileManager.default.copyItem(at: buildURL + "src/libavdevice/avdevice.h", to: fftoolsFile + "include/libavdevice/avdevice.h")
-            try FileManager.default.copyItem(at: buildURL + "src/libavdevice/version_major.h", to: fftoolsFile + "include/libavdevice/version_major.h")
-            try FileManager.default.copyItem(at: buildURL + "src/libavdevice/version.h", to: fftoolsFile + "include/libavdevice/version.h")
-            if !FileManager.default.fileExists(atPath: (fftoolsFile + "include/libpostproc").path) {
-                try FileManager.default.createDirectory(at: fftoolsFile + "include/libpostproc", withIntermediateDirectories: true)
+
+            try ["compat/va_copy.h", "libavdevice/avdevice.h", "libavdevice/version_major.h", "libavdevice/version.h", "libpostproc/postprocess_internal.h", "libpostproc/postprocess.h", "libpostproc/version_major.h", "libpostproc/version.h"].forEach { name in
+                try FileManager.default.copyItem(at: buildURL + "src" + name, to: fftoolsFile + "include/\(name)")
             }
-            try FileManager.default.copyItem(at: buildURL + "src/libpostproc/postprocess_internal.h", to: fftoolsFile + "include/libpostproc/postprocess_internal.h")
-            try FileManager.default.copyItem(at: buildURL + "src/libpostproc/postprocess.h", to: fftoolsFile + "include/libpostproc/postprocess.h")
-            try FileManager.default.copyItem(at: buildURL + "src/libpostproc/version_major.h", to: fftoolsFile + "include/libpostproc/version_major.h")
-            try FileManager.default.copyItem(at: buildURL + "src/libpostproc/version.h", to: fftoolsFile + "include/libpostproc/version.h")
-            let ffplayFile = URL.currentDirectory + "../Sources/ffplay"
-            try? FileManager.default.removeItem(at: ffplayFile)
-            try FileManager.default.createDirectory(at: ffplayFile, withIntermediateDirectories: true)
-            let ffprobeFile = URL.currentDirectory + "../Sources/ffprobe"
-            try? FileManager.default.removeItem(at: ffprobeFile)
-            try FileManager.default.createDirectory(at: ffprobeFile, withIntermediateDirectories: true)
-            let ffmpegFile = URL.currentDirectory + "../Sources/ffmpeg"
-            try? FileManager.default.removeItem(at: ffmpegFile)
-            try FileManager.default.createDirectory(at: ffmpegFile + "include", withIntermediateDirectories: true)
-            let fftools = buildURL + "src/fftools"
-            let fileNames = try FileManager.default.contentsOfDirectory(atPath: fftools.path)
-            for fileName in fileNames {
-                if fileName.hasPrefix("ffplay") {
-                    try FileManager.default.copyItem(at: fftools + fileName, to: ffplayFile + fileName)
-                } else if fileName.hasPrefix("ffprobe") {
-                    try FileManager.default.copyItem(at: fftools + fileName, to: ffprobeFile + fileName)
-                } else if fileName.hasPrefix("ffmpeg") {
-                    if fileName.hasSuffix(".h") {
-                        try FileManager.default.copyItem(at: fftools + fileName, to: ffmpegFile + "include" + fileName)
-                    } else {
-                        try FileManager.default.copyItem(at: fftools + fileName, to: ffmpegFile + fileName)
-                    }
-                } else if fileName.hasSuffix(".h") {
-                    try FileManager.default.copyItem(at: fftools + fileName, to: fftoolsFile + "include" + fileName)
-                } else if fileName.hasSuffix(".c") {
-                    try FileManager.default.copyItem(at: fftools + fileName, to: fftoolsFile + fileName)
+            let names = ["ffmpeg", "ffplay", "ffprobe"]
+            for name in names {
+                let file = URL.currentDirectory + "../Sources/\(name)"
+                try? FileManager.default.removeItem(at: file)
+                try FileManager.default.createDirectory(at: file, withIntermediateDirectories: true)
+                let vulkanURL = URL.currentDirectory + "\(Library.vulkan.rawValue)-\(Library.vulkan.version)" + "/External/Vulkan-Headers/include"
+                if name == "ffplay", FileManager.default.fileExists(atPath: vulkanURL.path) {
+                    try FileManager.default.copyItem(at: vulkanURL, to: URL.currentDirectory + "../Sources/ffplay/include")
+                } else {
+                    try FileManager.default.createDirectory(at: file + "include", withIntermediateDirectories: true)
                 }
             }
-            let prefix = scratch(platform: platform, arch: arch)
-            try? FileManager.default.removeItem(at: URL(fileURLWithPath: "/usr/local/bin/ffmpeg"))
-            try? FileManager.default.copyItem(at: prefix + "ffmpeg", to: URL(fileURLWithPath: "/usr/local/bin/ffmpeg"))
-            try? FileManager.default.removeItem(at: URL(fileURLWithPath: "/usr/local/bin/ffplay"))
-            try? FileManager.default.copyItem(at: prefix + "ffplay", to: URL(fileURLWithPath: "/usr/local/bin/ffplay"))
-            try? FileManager.default.removeItem(at: URL(fileURLWithPath: "/usr/local/bin/ffprobe"))
-            try? FileManager.default.copyItem(at: prefix + "ffprobe", to: URL(fileURLWithPath: "/usr/local/bin/ffprobe"))
+            let fftools = buildURL + "src/fftools"
+            try FileManager.default.contentsOfDirectory(atPath: fftools.path).forEach { fileName in
+                if let name = names.first { fileName.hasPrefix($0) } {
+                    if fileName.hasSuffix(".h") {
+                        try FileManager.default.copyItem(at: fftools + fileName, to: URL.currentDirectory + "../Sources/\(name)" + "include" + fileName)
+                    } else {
+                        try FileManager.default.copyItem(at: fftools + fileName, to: URL.currentDirectory + "../Sources/\(name)" + fileName)
+                    }
+                } else {
+                    if fileName.hasSuffix(".h") {
+                        try FileManager.default.copyItem(at: fftools + fileName, to: fftoolsFile + "include" + fileName)
+                    } else if fileName.hasSuffix(".c") {
+                        try FileManager.default.copyItem(at: fftools + fileName, to: fftoolsFile + fileName)
+                    }
+                }
+            }
+            for name in names {
+                let item = URL(fileURLWithPath: "/usr/local/bin/\(name)")
+                try? FileManager.default.removeItem(at: item)
+                try FileManager.default.copyItem(at: prefix + "bin" + name, to: item)
+            }
         }
     }
 
@@ -221,8 +211,8 @@ class BuildFFMPEG: BaseBuild {
         if platform == .macos {
             arguments.append("--enable-outdev=audiotoolbox")
         }
-        if !([PlatformType.tvos, .tvsimulator, .xros, .xrsimulator].contains(platform)) {
-            // tvos17才支持AVCaptureDeviceInput
+        if [PlatformType.macos, .maccatalyst, .isimulator].contains(platform) {
+            // tvos17才支持AVCaptureDeviceInput, iOS会要求申请NSCameraUsageDescription权限，所以就不默认加了
 //            'defaultDeviceWithMediaType:' is unavailable: not available on visionOS
             arguments.append("--enable-indev=avfoundation")
         }
@@ -327,7 +317,7 @@ class BuildFFMPEG: BaseBuild {
         "--enable-decoder=mjpeg", "--enable-decoder=mjpegb", "--enable-decoder=mpeg*", "--enable-decoder=mts2",
         "--enable-decoder=prores",
         "--enable-decoder=rv10", "--enable-decoder=rv20", "--enable-decoder=rv30", "--enable-decoder=rv40",
-        "--enable-decoder=snow", "--enable-decoder=svq3",
+        "--enable-decoder=svq3",
         "--enable-decoder=tscc", "--enable-decoder=tscc2", "--enable-decoder=txd",
         "--enable-decoder=wmv1", "--enable-decoder=wmv2", "--enable-decoder=wmv3",
         "--enable-decoder=vc1", "--enable-decoder=vp6", "--enable-decoder=vp6a", "--enable-decoder=vp6f",
@@ -337,7 +327,7 @@ class BuildFFMPEG: BaseBuild {
         "--enable-decoder=amr*", "--enable-decoder=ape", "--enable-decoder=cook",
         "--enable-decoder=dca", "--enable-decoder=dolby_e", "--enable-decoder=eac3*", "--enable-decoder=flac",
         "--enable-decoder=mp1*", "--enable-decoder=mp2*", "--enable-decoder=mp3*", "--enable-decoder=opus",
-        "--enable-decoder=pcm*", "--enable-decoder=sonic",
+        "--enable-decoder=pcm*",
         "--enable-decoder=truehd", "--enable-decoder=tta", "--enable-decoder=vorbis", "--enable-decoder=wma*", "--enable-decoder=wrapped_avframe",
         // 字幕
         "--enable-decoder=ass", "--enable-decoder=ccaption", "--enable-decoder=dvbsub", "--enable-decoder=dvdsub",

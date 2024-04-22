@@ -159,15 +159,15 @@ enum Library: String, CaseIterable {
         case .libpng:
             return "v1.6.43"
         case .libmpv:
-            return "v0.37.0"
+            return "v0.38.0"
         case .openssl:
-            return "openssl-3.2.1"
+            return "openssl-3.3.0"
         case .libsrt:
             return "v1.5.3"
         case .libsmbclient:
             return "samba-4.15.13"
         case .gnutls:
-            return "3.8.3"
+            return "3.8.5"
         case .nettle:
             return "nettle_3.9.1_release_20230601"
         case .libdav1d:
@@ -587,7 +587,7 @@ class BaseBuild {
         }
         try? FileManager.default.removeItem(at: frameworkDir)
         try FileManager.default.createDirectory(at: frameworkDir, withIntermediateDirectories: true, attributes: nil)
-        createFrameworkInclude(framework: framework, platform: platform, frameworkDir: frameworkDir)
+        try createFrameworkInclude(framework: framework, platform: platform, frameworkDir: frameworkDir)
         try createFrameworkLib(framework: framework, platform: platform, frameworkDir: frameworkDir)
         if !isFramework {
             return frameworkDir.path
@@ -618,7 +618,7 @@ class BaseBuild {
         return frameworkDir.path
     }
 
-    func createFrameworkInclude(framework: String, platform: PlatformType, frameworkDir: URL) {
+    func createFrameworkInclude(framework: String, platform: PlatformType, frameworkDir: URL) throws {
         if let arch = platform.architectures.first {
             let prefix = thinDir(platform: platform, arch: arch)
             var headerURL: URL = prefix + "include" + framework
@@ -780,7 +780,7 @@ enum PlatformType: String, CaseIterable {
         case .tvos, .tvsimulator:
             return "13.0"
         case .macos:
-            return "10.15"
+            return "11.0"
         case .maccatalyst:
             return "14.0"
         case .watchos, .watchsimulator:
