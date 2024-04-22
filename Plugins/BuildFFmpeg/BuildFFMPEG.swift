@@ -154,7 +154,9 @@ class BuildFFMPEG: BaseBuild {
         if framework == "Libavcodec" {
             return ["xvmc", "vdpau", "qsv", "dxva2", "d3d11va", "mathops", "videotoolbox"]
         } else if framework == "Libavutil" {
-            return ["hwcontext_vulkan", "hwcontext_vdpau", "hwcontext_vaapi", "hwcontext_qsv", "hwcontext_opencl", "hwcontext_dxva2", "hwcontext_d3d11va", "hwcontext_cuda", "hwcontext_videotoolbox", "getenv_utf8", "intmath", "libm", "thread", "mem_internal", "internal", "attributes_internal"]
+            return ["attributes_internal", "getenv_utf8", "hwcontext_cuda", "hwcontext_d3d11va", "hwcontext_d3d12va", "hwcontext_dxva2", "hwcontext_opencl", "hwcontext_qsv", "hwcontext_vaapi", "hwcontext_vdpau",
+                    "hwcontext_vulkan",
+                    "internal", "intmath", "libm", "mem_internal", "thread"]
         } else if framework == "Libavformat" {
             return ["os_support"]
         } else {
@@ -198,7 +200,6 @@ class BuildFFMPEG: BaseBuild {
             arguments.append("--enable-filter=yadif_videotoolbox")
             arguments.append("--enable-filter=scale_vt")
             arguments.append("--enable-filter=transpose_vt")
-        } else {
             arguments.append("--enable-encoder=h264_videotoolbox")
             arguments.append("--enable-encoder=hevc_videotoolbox")
             arguments.append("--enable-encoder=prores_videotoolbox")
@@ -279,16 +280,17 @@ class BuildFFMPEG: BaseBuild {
         // ,"--disable-fft"
         // Hardware accelerators:
         "--disable-d3d11va", "--disable-dxva2", "--disable-vaapi", "--disable-vdpau",
-        // todo ffmpeg的编译脚本有问题，没有加入libavcodec/vulkan_video_codec_av1std.h
-        "--disable-hwaccel=av1_vulkan,hevc_vulkan,h264_vulkan",
         // Individual component options:
         // ,"--disable-everything"
         // ./configure --list-muxers
         "--disable-muxers",
         "--enable-muxer=flac", "--enable-muxer=dash", "--enable-muxer=hevc",
+        "--enable-muxer=iamf",
         "--enable-muxer=m4v", "--enable-muxer=matroska", "--enable-muxer=mov", "--enable-muxer=mp4",
-        "--enable-muxer=mpegts", "--enable-muxer=webm*",
+        "--enable-muxer=mpegts",
         "--enable-muxer=nut",
+        "--enable-muxer=vvc", "--enable-muxer=webm*",
+
         // ./configure --list-encoders
         "--disable-encoders",
         "--enable-encoder=aac", "--enable-encoder=alac", "--enable-encoder=flac", "--enable-encoder=pcm*",
@@ -304,12 +306,13 @@ class BuildFFMPEG: BaseBuild {
         "--enable-demuxer=dash", "--enable-demuxer=data", "--enable-demuxer=dv",
         "--enable-demuxer=eac3",
         "--enable-demuxer=flac", "--enable-demuxer=flv", "--enable-demuxer=h264", "--enable-demuxer=hevc",
-        "--enable-demuxer=hls", "--enable-demuxer=live_flv", "--enable-demuxer=loas", "--enable-demuxer=m4v",
+        "--enable-demuxer=hls", "--enable-demuxer=iamf",
+        "--enable-demuxer=live_flv", "--enable-demuxer=loas", "--enable-demuxer=m4v",
         // matroska=mkv,mka,mks,mk3d
         "--enable-demuxer=matroska", "--enable-demuxer=mov", "--enable-demuxer=mp3", "--enable-demuxer=mpeg*",
         "--enable-demuxer=nut",
         "--enable-demuxer=ogg", "--enable-demuxer=rm", "--enable-demuxer=rtsp", "--enable-demuxer=rtp", "--enable-demuxer=srt",
-        "--enable-demuxer=vc1", "--enable-demuxer=wav", "--enable-demuxer=webm_dash_manifest",
+        "--enable-demuxer=vc1", "--enable-demuxer=vvc", "--enable-demuxer=wav", "--enable-demuxer=webm_dash_manifest",
         // ./configure --list-bsfs
         "--enable-bsfs",
         // ./configure --list-decoders
@@ -328,7 +331,7 @@ class BuildFFMPEG: BaseBuild {
         "--enable-decoder=tscc", "--enable-decoder=tscc2", "--enable-decoder=txd",
         "--enable-decoder=wmv1", "--enable-decoder=wmv2", "--enable-decoder=wmv3",
         "--enable-decoder=vc1", "--enable-decoder=vp6", "--enable-decoder=vp6a", "--enable-decoder=vp6f",
-        "--enable-decoder=vp7", "--enable-decoder=vp8", "--enable-decoder=vp9",
+        "--enable-decoder=vp7", "--enable-decoder=vp8", "--enable-decoder=vp9", "--enable-decoder=vvc",
         // 音频
         "--enable-decoder=aac*", "--enable-decoder=ac3*", "--enable-decoder=adpcm*", "--enable-decoder=alac*",
         "--enable-decoder=amr*", "--enable-decoder=ape", "--enable-decoder=cook",

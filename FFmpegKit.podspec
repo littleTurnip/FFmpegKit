@@ -23,10 +23,11 @@ Pod::Spec.new do |s|
         'FFmpegKit_FFmpegKit' => ['Sources/FFmpegKit/Resources/PrivacyInfo.xcprivacy']
     }
     s.subspec 'FFmpegKit' do |ffmpeg|
-        ffmpeg.libraries   = 'bz2', 'c++','expat', 'iconv', 'resolv', 'xml2', 'z'
+        ffmpeg.libraries   = 'bz2', 'c++', 'iconv', 'resolv', 'xml2', 'z'
+        ffmpeg.osx.libraries = 'expat'
         ffmpeg.frameworks  = 'AudioToolbox', 'AVFoundation', 'CoreMedia', 'VideoToolbox'
         ffmpeg.vendored_frameworks = 'Sources/Libavcodec.xcframework','Sources/Libavfilter.xcframework','Sources/Libavformat.xcframework','Sources/Libavutil.xcframework','Sources/Libswresample.xcframework','Sources/Libswscale.xcframework','Sources/Libavdevice.xcframework',
-        'Sources/libshaderc_combined.xcframework','Sources/MoltenVK.xcframework', 'Sources/lcms2.xcframework', 'Sources/libdav1d.xcframework', 'Sources/libplacebo.xcframework',
+        'Sources/libshaderc_combined.xcframework','Sources/vulkan.xcframework', 'Sources/lcms2.xcframework', 'Sources/libdav1d.xcframework', 'Sources/libplacebo.xcframework',
         'Sources/libfontconfig.xcframework',
         'Sources/gmp.xcframework', 'Sources/nettle.xcframework', 'Sources/hogweed.xcframework', 'Sources/gnutls.xcframework', 
         # 'Sources/libsmbclient.xcframework',

@@ -32,7 +32,7 @@ let package = Package(
         .target(
             name: "FFmpegKit",
             dependencies: [
-                "MoltenVK",
+                "vulkan",
                 "libshaderc_combined",
                 "lcms2",
                 "libdav1d",
@@ -81,6 +81,9 @@ let package = Package(
                 "fftools",
                 "SDL2",
             ]
+//            ,cxxSettings: [
+//                .unsafeFlags(["-I", "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1"]),
+//            ]
         ),
         .executableTarget(
             name: "ffprobe",
@@ -128,8 +131,8 @@ let package = Package(
             )
         ),
         .binaryTarget(
-            name: "MoltenVK",
-            path: "Sources/MoltenVK.xcframework"
+            name: "vulkan",
+            path: "Sources/vulkan.xcframework"
         ),
         .binaryTarget(
             name: "libshaderc_combined",
@@ -240,5 +243,6 @@ let package = Package(
 //            name: "libcrypto",
 //            path: "Sources/libcrypto.xcframework"
 //        ),
-    ]
+    ],
+    cLanguageStandard: .c11
 )
