@@ -233,7 +233,9 @@ class BuildFFMPEG: BaseBuild {
                 } else if library == .libzvbi {
                     arguments.append("--enable-decoder=libzvbi_teletext")
                 } else if library == .libplacebo {
-                    arguments.append("--enable-filter=libplacebo")
+                    arguments.append("--enable-filter=\(library.rawValue)")
+                } else if library == .libx265 {
+                    arguments.append("--enable-encoder=\(library.rawValue)")
                 }
             }
         }

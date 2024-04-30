@@ -97,7 +97,7 @@ extension Build {
         }
         if BaseBuild.disableGPL {
             librarys.removeAll {
-                $0 == .readline || $0 == .libsmbclient
+                $0.isGPL
             }
         } else {
             Build.ffmpegConfiguers.append("--enable-gpl")
@@ -143,7 +143,7 @@ extension Build {
 }
 
 enum Library: String, CaseIterable {
-    case libglslang, libshaderc, vulkan, lcms2, libdovi, libdav1d, libplacebo, libfreetype, libharfbuzz, libfribidi, libass, gmp, readline, nettle, gnutls, libsmbclient, libsrt, libzvbi, libfontconfig, libbluray, FFmpeg, libmpv, openssl, libtls, boringssl, libpng, libupnp, libnfs, libsmb2
+    case libglslang, libshaderc, vulkan, lcms2, libdovi, libdav1d, libplacebo, libfreetype, libharfbuzz, libfribidi, libass, gmp, readline, nettle, gnutls, libsmbclient, libsrt, libzvbi, libfontconfig, libbluray, libx265, FFmpeg, libmpv, openssl, libtls, boringssl, libpng, libupnp, libnfs, libsmb2
     var version: String {
         switch self {
         case .FFmpeg:
@@ -204,6 +204,8 @@ enum Library: String, CaseIterable {
             return "2.14.2"
         case .libsmb2:
             return "master"
+        case .libx265:
+            return "3.6"
         }
     }
 
@@ -253,6 +255,8 @@ enum Library: String, CaseIterable {
             return "https://gitlab.freedesktop.org/fontconfig/fontconfig"
         case .libsmb2:
             return "https://github.com/sahlberg/libsmb2"
+        case .libx265:
+            return "https://bitbucket.org/multicoreware/x265_git/src/master/"
         default:
             var value = rawValue
             if self != .libass, value.hasPrefix("lib") {
@@ -262,14 +266,24 @@ enum Library: String, CaseIterable {
         }
     }
 
+    var isGPL: Bool {
+        switch self {
+        case .libsmbclient, .libx265, .readline:
+            return true
+        default:
+            return false
+        }
+    }
+
     var isFFmpegDependentLibrary: Bool {
         switch self {
-        case .vulkan, .libshaderc, .libglslang, .lcms2, .libplacebo, .libdav1d, .gmp, .gnutls, .libsrt, .libzvbi, .libfontconfig, .libbluray:
+        case .vulkan, .libshaderc, .libglslang, .lcms2, .libplacebo, .libdav1d, .gmp, .gnutls, .libsrt, .libzvbi, .libfontconfig, .libbluray, .libsmbclient, .libx265:
+            if BaseBuild.disableGPL {
+                return !isGPL
+            }
             return true
         case .openssl:
             return false
-        case .libsmbclient:
-            return !BaseBuild.disableGPL
         default:
             return false
         }
@@ -335,6 +349,8 @@ enum Library: String, CaseIterable {
             return BuildBluray()
         case .libsmb2:
             return BuildSMB2()
+        case .libx265:
+            return BuildX265()
         }
     }
 }
@@ -349,7 +365,7 @@ class BaseBuild {
     static var gitCloneAll = false
     static var disableGPL = false
     let library: Library
-    let directoryURL: URL
+    var directoryURL: URL
     init(library: Library) {
         self.library = library
         directoryURL = URL.currentDirectory + "\(library.rawValue)-\(library.version)"
@@ -449,7 +465,9 @@ class BaseBuild {
                 "-DCMAKE_OSX_SYSROOT=\(platform.sdk.lowercased())",
                 "-DCMAKE_OSX_ARCHITECTURES=\(arch.rawValue)",
                 "-DCMAKE_INSTALL_PREFIX=\(thinDirPath)",
+                "-DCMAKE_SYSTEM_PROCESSOR=\(arch.targetCpu)",
                 "-DBUILD_SHARED_LIBS=0",
+                "-DENABLE_SHARED=0",
             ]
             arguments.append(contentsOf: self.arguments(platform: platform, arch: arch))
             try Utility.launch(path: cmake, arguments: arguments, currentDirectoryURL: buildURL, environment: environ)
@@ -1174,5 +1192,27 @@ class BuildSMB2: BaseBuild {
 
     init() {
         super.init(library: .libsmb2)
+    }
+}
+
+class BuildX265: BaseBuild {
+    init() {
+        super.init(library: .libx265)
+        directoryURL = directoryURL + "source"
+    }
+
+    override func arguments(platform: PlatformType, arch: ArchType) -> [String] {
+        var arg = ["-DSTATIC_LINK_CRT=1",
+                   "-DENABLE_PIC=1",
+                   "-DENABLE_CLI=0",
+                   "-DHIGH_BIT_DEPTH=1"]
+        if platform == .maccatalyst, arch == .x86_64 {
+            arg.append(contentsOf: ["-DENABLE_ASSEMBLY=0", "-DCROSS_COMPILE_ARM=0"])
+        } else if arch == .x86_64 {
+            arg.append(contentsOf: ["-DENABLE_ASSEMBLY=1", "-DCROSS_COMPILE_ARM=0"])
+        } else {
+            arg.append(contentsOf: ["-DENABLE_ASSEMBLY=0", "-DCROSS_COMPILE_ARM=1"])
+        }
+        return arg
     }
 }
