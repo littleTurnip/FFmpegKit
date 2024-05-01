@@ -44,6 +44,7 @@ let package = Package(
                 .target(name: "libbluray", condition: .when(platforms: [.macOS])),
                 "gmp", "nettle", "hogweed", "gnutls",
 //                "libsmbclient",
+//                "libx265",
                 "Libavcodec", "Libavdevice", "Libavfilter", "Libavformat", "Libavutil", "Libswresample", "Libswscale",
             ],
             resources: [.process("Resources")],
@@ -231,6 +232,10 @@ let package = Package(
             name: "gnutls",
             path: "Sources/gnutls.xcframework"
         ),
+//        .binaryTarget(
+//            name: "libx265",
+//            path: "Sources/libx265.xcframework"
+//        ),
 //        .binaryTarget(
 //            name: "libsmbclient",
 //            path: "Sources/libsmbclient.xcframework"

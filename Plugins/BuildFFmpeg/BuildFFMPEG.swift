@@ -201,6 +201,7 @@ class BuildFFMPEG: BaseBuild {
             arguments.append("--enable-filter=color")
             arguments.append("--enable-filter=lut")
             arguments.append("--enable-filter=testsrc")
+            arguments.append("--enable-filter=drawtext")
             // debug
             arguments.append("--enable-debug")
             arguments.append("--enable-debug=3")

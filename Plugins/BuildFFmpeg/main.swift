@@ -277,15 +277,13 @@ enum Library: String, CaseIterable {
 
     var isFFmpegDependentLibrary: Bool {
         switch self {
-        case .vulkan, .libshaderc, .libglslang, .lcms2, .libplacebo, .libdav1d, .gmp, .gnutls, .libsrt, .libzvbi, .libfontconfig, .libbluray, .libsmbclient, .libx265:
+        case .openssl, .readline, .nettle, .libmpv, .boringssl, .libpng, .libupnp, .libnfs, .libsmb2:
+            return false
+        default:
             if BaseBuild.disableGPL {
                 return !isGPL
             }
             return true
-        case .openssl:
-            return false
-        default:
-            return false
         }
     }
 
