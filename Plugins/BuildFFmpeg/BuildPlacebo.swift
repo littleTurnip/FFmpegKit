@@ -38,6 +38,10 @@ class BuildVulkan: BaseBuild {
         if !FileManager.default.fileExists(atPath: (directoryURL + "External/build/Release").path) {
             try Utility.launch(path: (directoryURL + "fetchDependencies").path, arguments: arguments, currentDirectoryURL: directoryURL)
         }
+        let vulkanURL = directoryURL + "/External/Vulkan-Headers/include"
+        if FileManager.default.fileExists(atPath: vulkanURL.path) {
+            try? FileManager.default.copyItem(at: vulkanURL, to: URL.currentDirectory + "../Sources/renderer/private")
+        }
         arguments = platforms().map(\.name)
         let xcframeworkURL = directoryURL + "Package/Release/MoltenVK/static/MoltenVK.xcframework"
         if !FileManager.default.fileExists(atPath: xcframeworkURL.path) || !BaseBuild.notRecompile {

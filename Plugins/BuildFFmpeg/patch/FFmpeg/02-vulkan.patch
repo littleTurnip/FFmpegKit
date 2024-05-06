@@ -1,0 +1,22 @@
+diff --git forkSrcPrefix/libavutil/hwcontext_vulkan.c forkDstPrefix/libavutil/hwcontext_vulkan.c
+index 6e3b96b73a0d18a5b2f6dfb5d51874b5df4552da..f0822faa0b94f22b3e96457b9064d4efd6adaf56 100644
+--- forkSrcPrefix/libavutil/hwcontext_vulkan.c
++++ forkDstPrefix/libavutil/hwcontext_vulkan.c
+@@ -389,6 +389,7 @@ static int load_libvulkan(AVHWDeviceContext *ctx)
+         "libvulkan.dylib",
+         "libvulkan.1.dylib",
+         "libMoltenVK.dylib",
++        "MoltenVK.framework/MoltenVK"
+ #else
+         "libvulkan.so.1",
+         "libvulkan.so",
+@@ -402,8 +403,7 @@ static int load_libvulkan(AVHWDeviceContext *ctx)
+     }
+ 
+     if (!p->libvulkan) {
+-        av_log(ctx, AV_LOG_ERROR, "Unable to open the libvulkan library!\n");
+-        return AVERROR_UNKNOWN;
++        p->libvulkan = dlopen(NULL, RTLD_NOW | RTLD_LOCAL);
+     }
+ 
+     hwctx->get_proc_addr = (PFN_vkGetInstanceProcAddr)dlsym(p->libvulkan, "vkGetInstanceProcAddr");

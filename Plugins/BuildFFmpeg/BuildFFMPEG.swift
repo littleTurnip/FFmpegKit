@@ -19,12 +19,6 @@ class BuildFFMPEG: BaseBuild {
         let lldbFile = URL.currentDirectory + "LLDBInitFile"
         try? FileManager.default.removeItem(at: lldbFile)
         FileManager.default.createFile(atPath: lldbFile.path, contents: nil, attributes: nil)
-        let path = directoryURL + "libavcodec/videotoolbox.c"
-        if let data = FileManager.default.contents(atPath: path.path), var str = String(data: data, encoding: .utf8) {
-            str = str.replacingOccurrences(of: "kCVPixelBufferOpenGLESCompatibilityKey", with: "kCVPixelBufferMetalCompatibilityKey")
-            str = str.replacingOccurrences(of: "kCVPixelBufferIOSurfaceOpenGLTextureCompatibilityKey", with: "kCVPixelBufferMetalCompatibilityKey")
-            try! str.write(toFile: path.path, atomically: true, encoding: .utf8)
-        }
     }
 
     override func flagsDependencelibrarys() -> [Library] {
@@ -109,12 +103,7 @@ class BuildFFMPEG: BaseBuild {
                 let file = URL.currentDirectory + "../Sources/\(name)"
                 try? FileManager.default.removeItem(at: file)
                 try FileManager.default.createDirectory(at: file, withIntermediateDirectories: true)
-                let vulkanURL = URL.currentDirectory + "\(Library.vulkan.rawValue)-\(Library.vulkan.version)" + "/External/Vulkan-Headers/include"
-                if name == "ffplay", FileManager.default.fileExists(atPath: vulkanURL.path) {
-                    try FileManager.default.copyItem(at: vulkanURL, to: URL.currentDirectory + "../Sources/ffplay/include")
-                } else {
-                    try FileManager.default.createDirectory(at: file + "include", withIntermediateDirectories: true)
-                }
+                try FileManager.default.createDirectory(at: file + "include", withIntermediateDirectories: true)
             }
             let fftools = buildURL + "src/fftools"
             try FileManager.default.contentsOfDirectory(atPath: fftools.path).forEach { fileName in

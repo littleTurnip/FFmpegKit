@@ -20,6 +20,7 @@ let package = Package(
         .library(name: "Libswscale", targets: ["Libswscale"]),
         .library(name: "libass", targets: ["libfreetype", "libfribidi", "libharfbuzz", "libass"]),
         .library(name: "libmpv", targets: ["FFmpegKit", "libass", "libmpv"]),
+        .library(name: "renderer", targets: ["renderer"]),
         .executable(name: "ffmpeg", targets: ["ffmpeg"]),
         .executable(name: "ffplay", targets: ["ffplay"]),
         .executable(name: "ffprobe", targets: ["ffprobe"]),
@@ -76,6 +77,21 @@ let package = Package(
                 .linkedLibrary("z"),
             ]
         ),
+        .target(
+            name: "fftools",
+            dependencies: [
+                "FFmpegKit",
+            ]
+        ),
+        .target(
+            name: "renderer",
+            dependencies: [
+                "FFmpegKit",
+            ],
+            cSettings: [
+                .headerSearchPath("private"),
+            ]
+        ),
         .executableTarget(
             name: "ffplay",
             dependencies: [
@@ -83,6 +99,7 @@ let package = Package(
                 "SDL2",
             ],
             cSettings: [
+                .headerSearchPath("../renderer/private"),
                 .define("VK_ENABLE_BETA_EXTENSIONS"),
             ]
         ),
@@ -96,12 +113,6 @@ let package = Package(
             name: "ffmpeg",
             dependencies: [
                 "fftools",
-            ]
-        ),
-        .target(
-            name: "fftools",
-            dependencies: [
-                "FFmpegKit",
             ]
         ),
         .systemLibrary(
