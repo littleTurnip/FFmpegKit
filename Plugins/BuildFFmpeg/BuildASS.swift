@@ -58,6 +58,19 @@ class BuildPng: BaseBuild {
     }
 }
 
+class BuildFontconfig: BaseBuild {
+    init() {
+        super.init(library: .libfontconfig)
+    }
+
+    override func arguments(platform _: PlatformType, arch _: ArchType) -> [String] {
+        [
+            "-Ddoc=disabled",
+            "-Dtests=disabled",
+        ]
+    }
+}
+
 class BuildASS: BaseBuild {
     init() {
         super.init(library: .libass)

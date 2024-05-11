@@ -201,7 +201,7 @@ enum Library: String, CaseIterable {
         case .libbluray:
             return "1.3.4"
         case .libfontconfig:
-            return "2.14.2"
+            return "2.15.0"
         case .libsmb2:
             return "master"
         case .libx265:

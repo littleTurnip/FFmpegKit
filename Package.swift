@@ -70,7 +70,8 @@ let package = Package(
                 .linkedFramework("VideoToolbox"),
                 .linkedLibrary("bz2"),
                 .linkedLibrary("c++"),
-                .linkedLibrary("expat", .when(platforms: [.macOS])),
+                // freetype 需要用到expat，所以全平台都要引入expat。iOS13 dyld: Library not loaded: /usr/lib/libexpat.1.dylib。所以计划iOS13就不支持了
+                .linkedLibrary("expat"),
                 .linkedLibrary("iconv"),
                 .linkedLibrary("resolv"),
                 .linkedLibrary("xml2"),
