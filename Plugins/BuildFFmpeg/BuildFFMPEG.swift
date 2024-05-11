@@ -161,18 +161,8 @@ class BuildFFMPEG: BaseBuild {
             arguments.append("--target-os=darwin")
             arguments.append("--enable-libxml2")
         }
-        // arguments.append(arch.cpu())
-        /**
-         aacpsdsp.o), building for Mac Catalyst, but linking in object file built for
-         x86_64 binaries are built without ASM support, since ASM for x86_64 is actually x86 and that confuses `xcodebuild -create-xcframework` https://stackoverflow.com/questions/58796267/building-for-macos-but-linking-in-object-file-built-for-free-standing/59103419#59103419
-         */
-        if platform == .maccatalyst || arch == .x86_64 {
-            arguments.append("--disable-neon")
-            arguments.append("--disable-asm")
-        } else {
-            arguments.append("--enable-neon")
-            arguments.append("--enable-asm")
-        }
+        arguments.append("--enable-neon")
+        arguments.append("--enable-asm")
         if ![.watchsimulator, .watchos, .android].contains(platform) {
             arguments.append("--enable-videotoolbox")
             arguments.append("--enable-audiotoolbox")

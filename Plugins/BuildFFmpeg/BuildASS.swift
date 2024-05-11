@@ -67,10 +67,9 @@ class BuildASS: BaseBuild {
         var result =
             [
                 "--disable-libtool-lock",
-                "--disable-fontconfig",
-                "--disable-require-system-font-provider",
                 "--disable-test",
                 "--disable-profile",
+                "--enable-fontconfig",
                 "--with-pic",
                 "--enable-static",
                 "--disable-shared",
