@@ -72,7 +72,9 @@ class BuildFFMPEG: BaseBuild {
         try? FileManager.default.copyItem(at: buildURL + "config.h", to: prefix + "include/libavutil/config.h")
         try? FileManager.default.copyItem(at: buildURL + "config.h", to: prefix + "include/libavcodec/config.h")
         try? FileManager.default.copyItem(at: buildURL + "config.h", to: prefix + "include/libavformat/config.h")
-        for name in ["libavutil/getenv_utf8.h", "libavutil/libm.h", "libavutil/thread.h", "libavutil/intmath.h", "libavutil/mem_internal.h", "libavutil/attributes_internal.h", "libavcodec/mathops.h", "libavformat/os_support.h", "libavutil/internal.h"] {
+        try? FileManager.default.createDirectory(at: prefix + "include/libavutil/arm", withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(at: prefix + "include/libavutil/x86", withIntermediateDirectories: true)
+        for name in ["libavutil/getenv_utf8.h", "libavutil/libm.h", "libavutil/thread.h", "libavutil/intmath.h", "libavutil/arm/intmath.h", "libavutil/x86/intmath.h", "libavutil/mem_internal.h", "libavutil/attributes_internal.h", "libavcodec/mathops.h", "libavformat/os_support.h", "libavutil/internal.h"] {
             try? FileManager.default.copyItem(at: buildURL + "src/\(name)", to: prefix + "include/\(name)")
         }
         let internalPath = prefix + "include/libavutil/internal.h"
@@ -135,7 +137,7 @@ class BuildFFMPEG: BaseBuild {
         } else if framework == "Libavutil" {
             return ["attributes_internal", "getenv_utf8", "hwcontext_cuda", "hwcontext_d3d11va", "hwcontext_d3d12va", "hwcontext_dxva2", "hwcontext_opencl", "hwcontext_qsv", "hwcontext_vaapi", "hwcontext_vdpau",
                     "hwcontext_vulkan",
-                    "internal", "intmath", "libm", "mem_internal", "thread"]
+                    "internal", "intmath", "x86/intmath", "arm/intmath", "libm", "mem_internal", "thread"]
         } else if framework == "Libavformat" {
             return ["os_support"]
         } else {
