@@ -626,11 +626,14 @@ class BaseBuild {
         """
         FileManager.default.createFile(atPath: frameworkDir.path + "/Modules/module.modulemap", contents: modulemap.data(using: .utf8), attributes: nil)
         var infoPath = frameworkDir
-        if platform == .macos {
+        if platform == .macos || platform == .maccatalyst {
             infoPath = infoPath + "Resources"
             try FileManager.default.createDirectory(at: infoPath, withIntermediateDirectories: true, attributes: nil)
         }
         createPlist(path: infoPath + "Info.plist", name: framework, minVersion: platform.minVersion, platform: platform.sdk)
+//        if platform == .macos || platform == .maccatalyst {
+//            try createFrameworkVersions(url: frameworkDir)
+//        }
         return frameworkDir.path
     }
 
@@ -666,19 +669,19 @@ class BaseBuild {
         try Utility.launch(path: "/usr/bin/lipo", arguments: arguments)
     }
 
-    private func ceateMacOSFramework(url: URL) throws {
+    private func createFrameworkVersions(url: URL) throws {
         let version = url + "Versions/A"
-        try FileManager.default.createDirectory(at: version + "Resources", withIntermediateDirectories: true, attributes: nil)
-        try FileManager.default.createSymbolicLink(at: url + "Versions/Current", withDestinationURL: version)
+        try FileManager.default.createDirectory(at: version, withIntermediateDirectories: true, attributes: nil)
+        try FileManager.default.createSymbolicLink(atPath: (url + "Versions/Current").path, withDestinationPath: "./A")
         try FileManager.default.moveItem(at: url + "Modules", to: version + "Modules")
-        try FileManager.default.createSymbolicLink(at: url + "Modules", withDestinationURL: version + "Modules")
+        try FileManager.default.createSymbolicLink(atPath: (url + "Modules").path, withDestinationPath: "./Versions/A/Modules")
         try FileManager.default.moveItem(at: url + "Headers", to: version + "Headers")
-        try FileManager.default.createSymbolicLink(at: url + "Headers", withDestinationURL: version + "Headers")
-        try FileManager.default.moveItem(at: url + "Info.plist", to: version + "Resources/Info.plist")
-        try FileManager.default.createSymbolicLink(at: url + "Resources", withDestinationURL: version + "Resources")
+        try FileManager.default.createSymbolicLink(atPath: (url + "Headers").path, withDestinationPath: "./Versions/A/Headers")
+        try FileManager.default.moveItem(at: url + "Resources", to: version + "Resources")
+        try FileManager.default.createSymbolicLink(atPath: (url + "Resources").path, withDestinationPath: "./Versions/A/Resources")
         let name = String(url.lastPathComponent.split(separator: ".").first ?? "")
         try FileManager.default.moveItem(at: url + name, to: version + name)
-        try FileManager.default.createSymbolicLink(at: url + name, withDestinationURL: version + name)
+        try FileManager.default.createSymbolicLink(atPath: (url + name).path, withDestinationPath: "./Versions/A/\(name)")
     }
 
     var isFramework: Bool {
