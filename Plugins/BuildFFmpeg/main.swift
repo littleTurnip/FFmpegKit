@@ -147,7 +147,7 @@ enum Library: String, CaseIterable {
     var version: String {
         switch self {
         case .FFmpeg:
-            return "n7.0"
+            return "n7.0.1"
         case .libfreetype:
             return "VER-2-13-2"
         case .libfribidi:
