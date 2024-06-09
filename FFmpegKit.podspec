@@ -18,7 +18,7 @@ Pod::Spec.new do |s|
     s.tvos.deployment_target = '13.0'
     s.default_subspec = 'FFmpegKit'
     s.static_framework = true
-    s.source_files = 'Sources/FFmpegKit/**/*.{h,c,m}'
+    s.source_files = 'Sources/FFmpegKit/*.c', 'Sources/FFmpegKit/include*/*.h'
     s.resource_bundles = {
         'FFmpegKit_FFmpegKit' => ['Sources/FFmpegKit/Resources/PrivacyInfo.xcprivacy']
     }
@@ -33,5 +33,9 @@ Pod::Spec.new do |s|
         'Sources/libzvbi.xcframework', 'Sources/libsrt.xcframework'
         ffmpeg.osx.vendored_frameworks = 'Sources/libbluray.xcframework'
         ffmpeg.dependency 'Libass'
+        ffmpeg.public_header_files = 'Sources/FFmpegKit/include/*.h'
+#        ffmpeg.private_header_files = 'Sources/FFmpegKit/private/*.h'
+#        $privateDir = File.dirname(__FILE__)
+        ffmpeg.xcconfig = { 'HEADER_SEARCH_PATHS' => '$(PODS_TARGET_SRCROOT)/Sources/FFmpegKit/private/**' }
     end
 end

@@ -19,14 +19,18 @@ jobs:
           sudo xcode-select -s /Applications/Xcode_15.2.app/Contents/Developer
           xcode-select -p
           xcodebuild -version
-      - name: Build
+      - name: BuildFFmpeg
+        run: swift package BuildFFmpeg  -h
+      - name: ffprobe
+        run: swift run ffprobe -h 
+      - name: pod install
         run: |
           cd Demo
           pod install
-          swift package BuildFFmpeg  -h
-          swift run ffprobe -h
-          xcodebuild -workspace Demo.xcworkspace -scheme macOS
-          xcodebuild -workspace Demo.xcworkspace -scheme iOS -sdk iphonesimulator
+      - name: xcodebuild macOS
+        run: xcodebuild -workspace Demo.xcworkspace -scheme macOS
+      - name: xcodebuild iOS
+        run: xcodebuild -workspace Demo.xcworkspace -scheme iOS -sdk iphonesimulator
           # xcodebuild -workspace Demo.xcworkspace -scheme visonOS -sdk XRSimulator
           # xcodebuild -workspace Demo.xcworkspace -scheme tvOS -sdk appletvsimulator
           
