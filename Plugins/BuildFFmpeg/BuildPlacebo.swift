@@ -40,7 +40,7 @@ class BuildVulkan: BaseBuild {
         }
         let vulkanURL = directoryURL + "/External/Vulkan-Headers/include"
         if FileManager.default.fileExists(atPath: vulkanURL.path) {
-            try? FileManager.default.copyItem(at: vulkanURL, to: URL.currentDirectory + "../Sources/renderer/private")
+            try? FileManager.default.copyItem(at: vulkanURL, to: URL.currentDirectory + "../Sources/FFmpegKit/private")
         }
         arguments = platforms().map(\.name)
         let xcframeworkURL = directoryURL + "Package/Release/MoltenVK/static/MoltenVK.xcframework"
