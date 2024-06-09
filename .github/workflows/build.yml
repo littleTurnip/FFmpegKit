@@ -28,9 +28,13 @@ jobs:
           cd Demo
           pod install
       - name: xcodebuild macOS
-        run: xcodebuild -workspace Demo.xcworkspace -scheme macOS
+        run: |
+          cd Demo
+          xcodebuild -workspace Demo.xcworkspace -scheme macOS
       - name: xcodebuild iOS
-        run: xcodebuild -workspace Demo.xcworkspace -scheme iOS -sdk iphonesimulator
+        run: |
+          cd Demo
+          xcodebuild -workspace Demo.xcworkspace -scheme iOS -sdk iphonesimulator
           # xcodebuild -workspace Demo.xcworkspace -scheme visonOS -sdk XRSimulator
           # xcodebuild -workspace Demo.xcworkspace -scheme tvOS -sdk appletvsimulator
           
