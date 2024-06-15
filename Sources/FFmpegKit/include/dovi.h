@@ -15,15 +15,15 @@
 // Parsed metadata from the Dolby Vision RPU
 struct dovi_metadata {
     // Colorspace transformation metadata
-    float nonlinear_offset[3];  // input offset ("ycc_to_rgb_offset")
-    float minLuminance;
-    float maxLuminance;
     simd_float3x3 nonlinear;     // before PQ, also called "ycc_to_rgb"
     simd_float3x3 linear;        // after PQ, also called "rgb_to_lms"
+    simd_float3 nonlinear_offset;  // input offset ("ycc_to_rgb_offset")
+    float minLuminance;
+    float maxLuminance;
     struct reshape_data {
-        float coeffs_data[8][4];
-        float mmr_packed_data[8*6][4];
-        float pivots_data[7];
+        simd_float4 coeffs[8];
+        simd_float4 mmr[8*6];
+        float pivots[7];
         float lo;
         float hi;
         uint8_t min_order;
@@ -33,7 +33,6 @@ struct dovi_metadata {
         bool has_mmr;
         bool mmr_single;
     } comp[3];
-
 };
 
 struct dovi_metadata* map_dovi_metadata(const AVDOVIMetadata *data);

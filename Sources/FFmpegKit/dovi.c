@@ -29,14 +29,14 @@ void shader_dovi_reshape(const struct dovi_reshape_data *comp, struct reshape_da
     // Prepare coefficients for GPU
     bool has_poly = false, has_mmr = false, mmr_single = true;
     int mmr_idx = 0, min_order = 3, max_order = 1;
-    memset(out->coeffs_data, 0, sizeof(out->coeffs_data));
+    memset(out->coeffs, 0, sizeof(out->coeffs));
     for (int i = 0; i < comp->num_pivots - 1; i++) {
         switch (comp->method[i]) {
         case 0: // polynomial
             has_poly = true;
-            out->coeffs_data[i][3] = 0.0; // order=0 signals polynomial
+            out->coeffs[i][3] = 0.0; // order=0 signals polynomial
             for (int k = 0; k < 3; k++)
-                out->coeffs_data[i][k] = comp->poly_coeffs[i][k];
+                out->coeffs[i][k] = comp->poly_coeffs[i][k];
             break;
 
         case 1:
@@ -44,20 +44,19 @@ void shader_dovi_reshape(const struct dovi_reshape_data *comp, struct reshape_da
             max_order = fmax(max_order, comp->mmr_order[i]);
             mmr_single = !has_mmr;
             has_mmr = true;
-            out->coeffs_data[i][3] = (float) comp->mmr_order[i];
-            out->coeffs_data[i][0] = comp->mmr_constant[i];
-            out->coeffs_data[i][1] = (float) mmr_idx;
+            out->coeffs[i][3] = (float) comp->mmr_order[i];
+            out->coeffs[i][0] = comp->mmr_constant[i];
+            out->coeffs[i][1] = (float) mmr_idx;
             for (int j = 0; j < comp->mmr_order[i]; j++) {
                 // store weights per order as two packed vec4s
-                float *mmr = &out->mmr_packed_data[mmr_idx][0];
-                mmr[0] = comp->mmr_coeffs[i][j][0];
-                mmr[1] = comp->mmr_coeffs[i][j][1];
-                mmr[2] = comp->mmr_coeffs[i][j][2];
-                mmr[3] = 0.0; // unused
-                mmr[4] = comp->mmr_coeffs[i][j][3];
-                mmr[5] = comp->mmr_coeffs[i][j][4];
-                mmr[6] = comp->mmr_coeffs[i][j][5];
-                mmr[7] = comp->mmr_coeffs[i][j][6];
+                out->mmr[mmr_idx][0] = comp->mmr_coeffs[i][j][0];
+                out->mmr[mmr_idx][1] = comp->mmr_coeffs[i][j][1];
+                out->mmr[mmr_idx][2] = comp->mmr_coeffs[i][j][2];
+                out->mmr[mmr_idx][3] = 0.0; // unused
+                out->mmr[mmr_idx][4] = comp->mmr_coeffs[i][j][3];
+                out->mmr[mmr_idx][5] = comp->mmr_coeffs[i][j][4];
+                out->mmr[mmr_idx][6] = comp->mmr_coeffs[i][j][5];
+                out->mmr[mmr_idx][7] = comp->mmr_coeffs[i][j][6];
                 mmr_idx += 2;
             }
             break;
@@ -66,12 +65,12 @@ void shader_dovi_reshape(const struct dovi_reshape_data *comp, struct reshape_da
 
     if (comp->num_pivots > 2) {
         // Skip the (irrelevant) lower and upper bounds
-        memcpy(out->pivots_data, comp->pivots + 1,
-               (comp->num_pivots - 2) * sizeof(out->pivots_data[0]));
+        memcpy(out->pivots, comp->pivots + 1,
+               (comp->num_pivots - 2) * sizeof(out->pivots[0]));
 
         // Fill the remainder with a quasi-infinite sentinel pivot
-        for (int i = comp->num_pivots - 2; i < ARRAY_SIZE(out->pivots_data); i++)
-            out->pivots_data[i] = 1e9f;
+        for (int i = comp->num_pivots - 2; i < ARRAY_SIZE(out->pivots); i++)
+            out->pivots[i] = 1e9f;
     }
     out->lo = comp->pivots[0];
     out->hi = comp->pivots[comp->num_pivots - 1];
