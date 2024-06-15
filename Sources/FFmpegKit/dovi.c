@@ -101,6 +101,8 @@ struct dovi_metadata* map_dovi_metadata(const AVDOVIMetadata *data)
             out->linear.columns[j][i] = av_q2d(color->rgb_to_lms_matrix[i*3+j]);
         }
     }
+    out->minLuminance = color->source_min_pq;
+    out->maxLuminance = color->source_max_pq;
     for (int c = 0; c < 3; c++) {
         const AVDOVIReshapingCurve *csrc = &mapping->curves[c];
         struct dovi_reshape_data cdst = {0};

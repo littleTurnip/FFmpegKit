@@ -16,6 +16,8 @@
 struct dovi_metadata {
     // Colorspace transformation metadata
     float nonlinear_offset[3];  // input offset ("ycc_to_rgb_offset")
+    float minLuminance;
+    float maxLuminance;
     simd_float3x3 nonlinear;     // before PQ, also called "ycc_to_rgb"
     simd_float3x3 linear;        // after PQ, also called "rgb_to_lms"
     struct reshape_data {
