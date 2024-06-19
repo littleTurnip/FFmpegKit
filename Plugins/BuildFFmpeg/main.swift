@@ -143,7 +143,7 @@ extension Build {
 }
 
 enum Library: String, CaseIterable {
-    case libglslang, libshaderc, vulkan, lcms2, libdovi, libdav1d, libplacebo, libfreetype, libharfbuzz, libfribidi, libass, gmp, readline, nettle, gnutls, libsmbclient, libsrt, libzvbi, libfontconfig, libbluray, libx265, FFmpeg, libmpv, openssl, libtls, boringssl, libpng, libupnp, libnfs, libsmb2
+    case libglslang, libshaderc, vulkan, lcms2, libdovi, libdav1d, libplacebo, libfreetype, libharfbuzz, libfribidi, libass, gmp, readline, nettle, gnutls, libsmbclient, libsrt, libzvbi, libfontconfig, libbluray, libx264, libx265, FFmpeg, libmpv, openssl, libtls, boringssl, libpng, libupnp, libnfs, libsmb2
     var version: String {
         switch self {
         case .FFmpeg:
@@ -155,7 +155,7 @@ enum Library: String, CaseIterable {
         case .libharfbuzz:
             return "5.3.1"
         case .libass:
-            return "0.17.1-branch"
+            return "0.17.2"
         case .libpng:
             return "v1.6.43"
         case .libmpv:
@@ -206,6 +206,8 @@ enum Library: String, CaseIterable {
             return "master"
         case .libx265:
             return "3.6"
+        case .libx264:
+            return "stable"
         }
     }
 
@@ -255,6 +257,8 @@ enum Library: String, CaseIterable {
             return "https://gitlab.freedesktop.org/fontconfig/fontconfig"
         case .libsmb2:
             return "https://github.com/sahlberg/libsmb2"
+        case .libx264:
+            return "https://code.videolan.org/videolan/x264"
         case .libx265:
             return "https://bitbucket.org/multicoreware/x265_git/src/master/"
         default:
@@ -268,7 +272,7 @@ enum Library: String, CaseIterable {
 
     var isGPL: Bool {
         switch self {
-        case .libsmbclient, .libx265, .readline:
+        case .libsmbclient, .libx264, .libx265, .readline:
             return true
         default:
             return false
@@ -349,6 +353,8 @@ enum Library: String, CaseIterable {
             return BuildSMB2()
         case .libx265:
             return BuildX265()
+        case .libx264:
+            return BuildX264()
         }
     }
 }
@@ -861,10 +867,8 @@ enum PlatformType: String, CaseIterable {
 
     var architectures: [ArchType] {
         switch self {
-        case .ios, .xros, .watchos, .android:
+        case .ios, .xros, .tvos, .watchos, .android:
             return [.arm64]
-        case .tvos:
-            return [.arm64, .arm64e]
         case .isimulator, .tvsimulator, .watchsimulator:
             return [.arm64, .x86_64]
         case .xrsimulator:
@@ -1213,6 +1217,33 @@ class BuildX265: BaseBuild {
             arg.append(contentsOf: ["-DENABLE_ASSEMBLY=1", "-DCROSS_COMPILE_ARM=0"])
         } else {
             arg.append(contentsOf: ["-DENABLE_ASSEMBLY=0", "-DCROSS_COMPILE_ARM=1"])
+        }
+        return arg
+    }
+}
+
+class BuildX264: BaseBuild {
+    init() {
+        super.init(library: .libx264)
+    }
+
+    override func environment(platform: PlatformType, arch: ArchType) -> [String: String] {
+        var env = super.environment(platform: platform, arch: arch)
+        if arch == .x86_64 {
+            env["AS"] = "nasm"
+        }
+        return env
+    }
+
+    override func arguments(platform: PlatformType, arch: ArchType) -> [String] {
+        var arg = ["--enable-static",
+                   "--enable-pic",
+                   "--host=\(platform.host(arch: arch))",
+                   "--prefix=\(thinDir(platform: platform, arch: arch).path)",
+                   "--sysroot=\(platform.isysroot)",
+                   "--disable-cli"]
+        if arch == .x86_64 {
+            arg.append("--disable-asm")
         }
         return arg
     }
