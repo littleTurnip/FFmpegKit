@@ -171,7 +171,7 @@ enum Library: String, CaseIterable {
         case .nettle:
             return "nettle_3.9.1_release_20230601"
         case .libdav1d:
-            return "1.1.0"
+            return "1.4.3"
         case .gmp:
             return "v6.2.1"
         case .libtls:
