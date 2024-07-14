@@ -155,7 +155,7 @@ enum Library: String, CaseIterable {
         case .libharfbuzz:
             return "5.3.1"
         case .libass:
-            return "0.17.2"
+            return "0.17.3"
         case .libpng:
             return "v1.6.43"
         case .libmpv:
