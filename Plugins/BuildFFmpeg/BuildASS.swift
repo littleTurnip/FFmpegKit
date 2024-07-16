@@ -58,30 +58,33 @@ class BuildPng: BaseBuild {
     }
 }
 
+class BuildFontconfig: BaseBuild {
+    init() {
+        super.init(library: .libfontconfig)
+    }
+
+    override func arguments(platform _: PlatformType, arch _: ArchType) -> [String] {
+        [
+            "-Ddoc=disabled",
+            "-Dtests=disabled",
+        ]
+    }
+}
+
 class BuildASS: BaseBuild {
     init() {
         super.init(library: .libass)
     }
 
     override func arguments(platform: PlatformType, arch: ArchType) -> [String] {
-        var result =
-            [
-                "--disable-libtool-lock",
-                "--disable-fontconfig",
-                "--disable-require-system-font-provider",
-                "--disable-test",
-                "--disable-profile",
-                "--with-pic",
-                "--enable-static",
-                "--disable-shared",
-                "--disable-fast-install",
-                "--disable-dependency-tracking",
-                "--host=\(platform.host(arch: arch))",
-                "--prefix=\(thinDir(platform: platform, arch: arch).path)",
-            ]
-        if arch == .x86_64 {
-            result.append("--enable-asm")
+        var arg = [
+            "-Dfontconfig=enabled",
+            "-Dcoretext=enabled",
+            "-Dlarge-tiles=true",
+        ]
+        if ![PlatformType.isimulator, .tvsimulator, .maccatalyst].contains(platform) || arch != .x86_64 {
+            arg.append("-Dasm=enabled")
         }
-        return result
+        return arg
     }
 }

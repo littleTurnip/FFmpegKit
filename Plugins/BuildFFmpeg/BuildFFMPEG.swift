@@ -19,12 +19,6 @@ class BuildFFMPEG: BaseBuild {
         let lldbFile = URL.currentDirectory + "LLDBInitFile"
         try? FileManager.default.removeItem(at: lldbFile)
         FileManager.default.createFile(atPath: lldbFile.path, contents: nil, attributes: nil)
-        let path = directoryURL + "libavcodec/videotoolbox.c"
-        if let data = FileManager.default.contents(atPath: path.path), var str = String(data: data, encoding: .utf8) {
-            str = str.replacingOccurrences(of: "kCVPixelBufferOpenGLESCompatibilityKey", with: "kCVPixelBufferMetalCompatibilityKey")
-            str = str.replacingOccurrences(of: "kCVPixelBufferIOSurfaceOpenGLTextureCompatibilityKey", with: "kCVPixelBufferMetalCompatibilityKey")
-            try! str.write(toFile: path.path, atomically: true, encoding: .utf8)
-        }
     }
 
     override func flagsDependencelibrarys() -> [Library] {
@@ -78,7 +72,10 @@ class BuildFFMPEG: BaseBuild {
         try? FileManager.default.copyItem(at: buildURL + "config.h", to: prefix + "include/libavutil/config.h")
         try? FileManager.default.copyItem(at: buildURL + "config.h", to: prefix + "include/libavcodec/config.h")
         try? FileManager.default.copyItem(at: buildURL + "config.h", to: prefix + "include/libavformat/config.h")
-        for name in ["libavutil/getenv_utf8.h", "libavutil/libm.h", "libavutil/thread.h", "libavutil/intmath.h", "libavutil/mem_internal.h", "libavutil/attributes_internal.h", "libavcodec/mathops.h", "libavformat/os_support.h", "libavutil/internal.h"] {
+        try? FileManager.default.createDirectory(at: prefix + "include/libavcodec/x86", withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(at: prefix + "include/libavutil/arm", withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(at: prefix + "include/libavutil/x86", withIntermediateDirectories: true)
+        for name in ["libavcodec/x86/mathops.h", "libavutil/x86/asm.h", "libavutil/getenv_utf8.h", "libavutil/libm.h", "libavutil/thread.h", "libavutil/intmath.h", "libavutil/arm/intmath.h", "libavutil/x86/intmath.h", "libavutil/mem_internal.h", "libavutil/attributes_internal.h", "libavcodec/mathops.h", "libavformat/os_support.h", "libavutil/internal.h"] {
             try? FileManager.default.copyItem(at: buildURL + "src/\(name)", to: prefix + "include/\(name)")
         }
         let internalPath = prefix + "include/libavutil/internal.h"
@@ -109,12 +106,7 @@ class BuildFFMPEG: BaseBuild {
                 let file = URL.currentDirectory + "../Sources/\(name)"
                 try? FileManager.default.removeItem(at: file)
                 try FileManager.default.createDirectory(at: file, withIntermediateDirectories: true)
-                let vulkanURL = URL.currentDirectory + "\(Library.vulkan.rawValue)-\(Library.vulkan.version)" + "/External/Vulkan-Headers/include"
-                if name == "ffplay", FileManager.default.fileExists(atPath: vulkanURL.path) {
-                    try FileManager.default.copyItem(at: vulkanURL, to: URL.currentDirectory + "../Sources/ffplay/include")
-                } else {
-                    try FileManager.default.createDirectory(at: file + "include", withIntermediateDirectories: true)
-                }
+                try FileManager.default.createDirectory(at: file + "include", withIntermediateDirectories: true)
             }
             let fftools = buildURL + "src/fftools"
             try FileManager.default.contentsOfDirectory(atPath: fftools.path).forEach { fileName in
@@ -142,11 +134,11 @@ class BuildFFMPEG: BaseBuild {
 
     override func frameworkExcludeHeaders(_ framework: String) -> [String] {
         if framework == "Libavcodec" {
-            return ["xvmc", "vdpau", "qsv", "dxva2", "d3d11va", "mathops", "videotoolbox"]
+            return ["xvmc", "vdpau", "qsv", "dxva2", "d3d11va", "mathops", "x86/mathops"]
         } else if framework == "Libavutil" {
             return ["attributes_internal", "getenv_utf8", "hwcontext_cuda", "hwcontext_d3d11va", "hwcontext_d3d12va", "hwcontext_dxva2", "hwcontext_opencl", "hwcontext_qsv", "hwcontext_vaapi", "hwcontext_vdpau",
                     "hwcontext_vulkan",
-                    "internal", "intmath", "libm", "mem_internal", "thread"]
+                    "internal", "intmath", "arm/intmath", "x86/intmath", "x86/asm", "libm", "mem_internal", "thread"]
         } else if framework == "Libavformat" {
             return ["os_support"]
         } else {
@@ -172,18 +164,8 @@ class BuildFFMPEG: BaseBuild {
             arguments.append("--target-os=darwin")
             arguments.append("--enable-libxml2")
         }
-        // arguments.append(arch.cpu())
-        /**
-         aacpsdsp.o), building for Mac Catalyst, but linking in object file built for
-         x86_64 binaries are built without ASM support, since ASM for x86_64 is actually x86 and that confuses `xcodebuild -create-xcframework` https://stackoverflow.com/questions/58796267/building-for-macos-but-linking-in-object-file-built-for-free-standing/59103419#59103419
-         */
-        if platform == .maccatalyst || arch == .x86_64 {
-            arguments.append("--disable-neon")
-            arguments.append("--disable-asm")
-        } else {
-            arguments.append("--enable-neon")
-            arguments.append("--enable-asm")
-        }
+        arguments.append("--enable-neon")
+        arguments.append("--enable-asm")
         if ![.watchsimulator, .watchos, .android].contains(platform) {
             arguments.append("--enable-videotoolbox")
             arguments.append("--enable-audiotoolbox")
@@ -201,6 +183,7 @@ class BuildFFMPEG: BaseBuild {
             arguments.append("--enable-filter=color")
             arguments.append("--enable-filter=lut")
             arguments.append("--enable-filter=testsrc")
+            arguments.append("--enable-filter=drawtext")
             // debug
             arguments.append("--enable-debug")
             arguments.append("--enable-debug=3")
@@ -233,7 +216,9 @@ class BuildFFMPEG: BaseBuild {
                 } else if library == .libzvbi {
                     arguments.append("--enable-decoder=libzvbi_teletext")
                 } else if library == .libplacebo {
-                    arguments.append("--enable-filter=libplacebo")
+                    arguments.append("--enable-filter=\(library.rawValue)")
+                } else if library == .libx265 {
+                    arguments.append("--enable-encoder=\(library.rawValue)")
                 }
             }
         }
@@ -287,53 +272,55 @@ class BuildFFMPEG: BaseBuild {
         "--enable-encoder=movtext", "--enable-encoder=mpeg4", "--enable-encoder=prores",
         // ./configure --list-protocols
         "--enable-protocols",
-        // ./configure --list-demuxers
-        // 用所有的demuxers的话，那avformat就会达到8MB了，指定的话，那就只要4MB。
-        "--disable-demuxers",
-        "--enable-demuxer=aac", "--enable-demuxer=ac3", "--enable-demuxer=aiff", "--enable-demuxer=amr",
-        "--enable-demuxer=ape", "--enable-demuxer=asf", "--enable-demuxer=ass", "--enable-demuxer=av1",
-        "--enable-demuxer=avi", "--enable-demuxer=caf", "--enable-demuxer=concat",
-        "--enable-demuxer=dash", "--enable-demuxer=data", "--enable-demuxer=dv",
-        "--enable-demuxer=eac3",
-        "--enable-demuxer=flac", "--enable-demuxer=flv", "--enable-demuxer=h264", "--enable-demuxer=hevc",
-        "--enable-demuxer=hls", "--enable-demuxer=iamf",
-        "--enable-demuxer=live_flv", "--enable-demuxer=loas", "--enable-demuxer=m4v",
-        // matroska=mkv,mka,mks,mk3d
-        "--enable-demuxer=matroska", "--enable-demuxer=mov", "--enable-demuxer=mp3", "--enable-demuxer=mpeg*",
-        "--enable-demuxer=nut",
-        "--enable-demuxer=ogg", "--enable-demuxer=rm", "--enable-demuxer=rtsp", "--enable-demuxer=rtp", "--enable-demuxer=srt",
-        "--enable-demuxer=vc1", "--enable-demuxer=vvc", "--enable-demuxer=wav", "--enable-demuxer=webm_dash_manifest",
         // ./configure --list-bsfs
         "--enable-bsfs",
-        // ./configure --list-decoders
-        // 用所有的decoders的话，那avcodec就会达到40MB了，指定的话，那就只要20MB。
-        "--disable-decoders",
-        // 视频
-        "--enable-decoder=av1", "--enable-decoder=dca", "--enable-decoder=dxv",
-        "--enable-decoder=ffv1", "--enable-decoder=ffvhuff", "--enable-decoder=flv",
-        "--enable-decoder=h263", "--enable-decoder=h263i", "--enable-decoder=h263p", "--enable-decoder=h264",
-        "--enable-decoder=hap", "--enable-decoder=hevc", "--enable-decoder=huffyuv",
-        "--enable-decoder=indeo5",
-        "--enable-decoder=mjpeg", "--enable-decoder=mjpegb", "--enable-decoder=mpeg*", "--enable-decoder=mts2",
-        "--enable-decoder=prores",
-        "--enable-decoder=rv10", "--enable-decoder=rv20", "--enable-decoder=rv30", "--enable-decoder=rv40",
-        "--enable-decoder=svq3",
-        "--enable-decoder=tscc", "--enable-decoder=tscc2", "--enable-decoder=txd",
-        "--enable-decoder=wmv1", "--enable-decoder=wmv2", "--enable-decoder=wmv3",
-        "--enable-decoder=vc1", "--enable-decoder=vp6", "--enable-decoder=vp6a", "--enable-decoder=vp6f",
-        "--enable-decoder=vp7", "--enable-decoder=vp8", "--enable-decoder=vp9", "--enable-decoder=vvc",
-        // 音频
-        "--enable-decoder=aac*", "--enable-decoder=ac3*", "--enable-decoder=adpcm*", "--enable-decoder=alac*",
-        "--enable-decoder=amr*", "--enable-decoder=ape", "--enable-decoder=cook",
-        "--enable-decoder=dca", "--enable-decoder=dolby_e", "--enable-decoder=eac3*", "--enable-decoder=flac",
-        "--enable-decoder=mp1*", "--enable-decoder=mp2*", "--enable-decoder=mp3*", "--enable-decoder=opus",
-        "--enable-decoder=pcm*",
-        "--enable-decoder=truehd", "--enable-decoder=tta", "--enable-decoder=vorbis", "--enable-decoder=wma*", "--enable-decoder=wrapped_avframe",
-        // 字幕
-        "--enable-decoder=ass", "--enable-decoder=ccaption", "--enable-decoder=dvbsub", "--enable-decoder=dvdsub",
-        "--enable-decoder=mpl2", "--enable-decoder=movtext",
-        "--enable-decoder=pgssub", "--enable-decoder=srt", "--enable-decoder=ssa", "--enable-decoder=subrip",
-        "--enable-decoder=xsub", "--enable-decoder=webvtt",
+        // ./configure --list-demuxers
+        // 用所有的demuxers的话，那avformat就会达到8MB了，指定的话，那就只要4MB。
+//        "--disable-demuxers",
+//        "--enable-demuxer=aac", "--enable-demuxer=ac3", "--enable-demuxer=aiff", "--enable-demuxer=amr",
+//        "--enable-demuxer=ape", "--enable-demuxer=asf", "--enable-demuxer=ass", "--enable-demuxer=av1",
+//        "--enable-demuxer=avi", "--enable-demuxer=caf", "--enable-demuxer=concat",
+//        "--enable-demuxer=dash", "--enable-demuxer=data", "--enable-demuxer=dv",
+//        "--enable-demuxer=eac3",
+//        "--enable-demuxer=flac", "--enable-demuxer=flv", "--enable-demuxer=h264", "--enable-demuxer=hevc",
+//        "--enable-demuxer=hls", "--enable-demuxer=iamf",
+//        "--enable-demuxer=live_flv", "--enable-demuxer=loas", "--enable-demuxer=m4v",
+//        // matroska=mkv,mka,mks,mk3d
+//        "--enable-demuxer=matroska", "--enable-demuxer=mov", "--enable-demuxer=mp3", "--enable-demuxer=mpeg*",
+//        "--enable-demuxer=nut",
+//        "--enable-demuxer=ogg", "--enable-demuxer=rm", "--enable-demuxer=rtsp", "--enable-demuxer=rtp", "--enable-demuxer=srt",
+//        "--enable-demuxer=vc1", "--enable-demuxer=vvc", "--enable-demuxer=wav", "--enable-demuxer=webm_dash_manifest",
+//        // ./configure --list-decoders
+//        // 用所有的decoders的话，那avcodec就会达到40MB了，指定的话，那就只要20MB。
+//        "--disable-decoders",
+//        // 视频
+//        "--enable-decoder=av1",
+//        "--enable-decoder=cfhd",
+//        "--enable-decoder=dca", "--enable-decoder=dxv",
+//        "--enable-decoder=ffv1", "--enable-decoder=ffvhuff", "--enable-decoder=flv",
+//        "--enable-decoder=h263", "--enable-decoder=h263i", "--enable-decoder=h263p", "--enable-decoder=h264",
+//        "--enable-decoder=hap", "--enable-decoder=hevc", "--enable-decoder=huffyuv",
+//        "--enable-decoder=indeo5",
+//        "--enable-decoder=mjpeg", "--enable-decoder=mjpegb", "--enable-decoder=mpeg*", "--enable-decoder=mts2",
+//        "--enable-decoder=prores",
+//        "--enable-decoder=rv10", "--enable-decoder=rv20", "--enable-decoder=rv30", "--enable-decoder=rv40",
+//        "--enable-decoder=svq3",
+//        "--enable-decoder=tscc", "--enable-decoder=tscc2", "--enable-decoder=txd",
+//        "--enable-decoder=wmv1", "--enable-decoder=wmv2", "--enable-decoder=wmv3",
+//        "--enable-decoder=vc1", "--enable-decoder=vp6", "--enable-decoder=vp6a", "--enable-decoder=vp6f",
+//        "--enable-decoder=vp7", "--enable-decoder=vp8", "--enable-decoder=vp9", "--enable-decoder=vvc",
+//        // 音频
+//        "--enable-decoder=aac*", "--enable-decoder=ac3*", "--enable-decoder=adpcm*", "--enable-decoder=alac*",
+//        "--enable-decoder=amr*", "--enable-decoder=ape", "--enable-decoder=cook",
+//        "--enable-decoder=dca", "--enable-decoder=dolby_e", "--enable-decoder=eac3*", "--enable-decoder=flac",
+//        "--enable-decoder=mp1*", "--enable-decoder=mp2*", "--enable-decoder=mp3*", "--enable-decoder=opus",
+//        "--enable-decoder=pcm*",
+//        "--enable-decoder=truehd", "--enable-decoder=tta", "--enable-decoder=vorbis", "--enable-decoder=wma*", "--enable-decoder=wrapped_avframe",
+//        // 字幕
+//        "--enable-decoder=ass", "--enable-decoder=ccaption", "--enable-decoder=dvbsub", "--enable-decoder=dvdsub",
+//        "--enable-decoder=mpl2", "--enable-decoder=movtext",
+//        "--enable-decoder=pgssub", "--enable-decoder=srt", "--enable-decoder=ssa", "--enable-decoder=subrip",
+//        "--enable-decoder=xsub", "--enable-decoder=webvtt",
 
         // ./configure --list-filters
         "--disable-filters",
@@ -402,19 +389,6 @@ class BuildSRT: BaseBuild {
             "-DENABLE_APPS=0",
             "-DENABLE_SHARED=0",
             platform == .maccatalyst ? "-DENABLE_MONOTONIC_CLOCK=0" : "-DENABLE_MONOTONIC_CLOCK=1",
-        ]
-    }
-}
-
-class BuildFontconfig: BaseBuild {
-    init() {
-        super.init(library: .libfontconfig)
-    }
-
-    override func arguments(platform _: PlatformType, arch _: ArchType) -> [String] {
-        [
-            "-Ddoc=disabled",
-            "-Dtests=disabled",
         ]
     }
 }

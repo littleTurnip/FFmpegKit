@@ -44,9 +44,13 @@ let package = Package(
                 .target(name: "libbluray", condition: .when(platforms: [.macOS])),
                 "gmp", "nettle", "hogweed", "gnutls",
 //                "libsmbclient",
+//                "libx265",
                 "Libavcodec", "Libavdevice", "Libavfilter", "Libavformat", "Libavutil", "Libswresample", "Libswscale",
             ],
             resources: [.process("Resources")],
+            cSettings: [
+                .headerSearchPath("private"),
+            ],
             linkerSettings: [
                 .linkedFramework("AudioToolbox"),
                 .linkedFramework("AVFAudio"),
@@ -68,11 +72,18 @@ let package = Package(
                 .linkedFramework("VideoToolbox"),
                 .linkedLibrary("bz2"),
                 .linkedLibrary("c++"),
-                .linkedLibrary("expat", .when(platforms: [.macOS])),
+                // freetype 需要用到expat，所以全平台都要引入expat。iOS13 dyld: Library not loaded: /usr/lib/libexpat.1.dylib。所以计划iOS13就不支持了
+                .linkedLibrary("expat"),
                 .linkedLibrary("iconv"),
                 .linkedLibrary("resolv"),
                 .linkedLibrary("xml2"),
                 .linkedLibrary("z"),
+            ]
+        ),
+        .target(
+            name: "fftools",
+            dependencies: [
+                "FFmpegKit",
             ]
         ),
         .executableTarget(
@@ -82,6 +93,7 @@ let package = Package(
                 "SDL2",
             ],
             cSettings: [
+                .headerSearchPath("../FFmpegKit/private"),
                 .define("VK_ENABLE_BETA_EXTENSIONS"),
             ]
         ),
@@ -95,12 +107,6 @@ let package = Package(
             name: "ffmpeg",
             dependencies: [
                 "fftools",
-            ]
-        ),
-        .target(
-            name: "fftools",
-            dependencies: [
-                "FFmpegKit",
             ]
         ),
         .systemLibrary(
@@ -231,6 +237,10 @@ let package = Package(
             name: "gnutls",
             path: "Sources/gnutls.xcframework"
         ),
+//        .binaryTarget(
+//            name: "libx265",
+//            path: "Sources/libx265.xcframework"
+//        ),
 //        .binaryTarget(
 //            name: "libsmbclient",
 //            path: "Sources/libsmbclient.xcframework"

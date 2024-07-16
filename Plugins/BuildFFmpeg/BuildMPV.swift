@@ -10,23 +10,6 @@ import Foundation
 class BuildMPV: BaseBuild {
     init() {
         super.init(library: .libmpv)
-        let path = directoryURL + "meson.build"
-        if let data = FileManager.default.contents(atPath: path.path), var str = String(data: data, encoding: .utf8) {
-            str = str.replacingOccurrences(of: "# ffmpeg", with: """
-            add_languages('objc')
-            #ffmpeg
-            """)
-            str = str.replacingOccurrences(of: """
-            subprocess_source = files('osdep/subprocess-posix.c')
-            """, with: """
-            if host_machine.subsystem() == 'tvos' or host_machine.subsystem() == 'tvos-simulator'
-                subprocess_source = files('osdep/subprocess-dummy.c')
-            else
-                subprocess_source =files('osdep/subprocess-posix.c')
-            endif
-            """)
-            try! str.write(toFile: path.path, atomically: true, encoding: .utf8)
-        }
     }
 
     override func flagsDependencelibrarys() -> [Library] {
@@ -39,6 +22,8 @@ class BuildMPV: BaseBuild {
             "-Dgl=enabled",
             "-Dplain-gl=enabled",
             "-Diconv=enabled",
+            "-Dvulkan=enabled",
+            "-Dmoltenvk=enabled",
         ]
         if BaseBuild.disableGPL {
             array.append("-Dgpl=false")
@@ -56,6 +41,7 @@ class BuildMPV: BaseBuild {
             array.append("-Dvideotoolbox-gl=disabled")
             array.append("-Dswift-build=disabled")
             array.append("-Daudiounit=enabled")
+            array.append("-Davfoundation=disabled")
             if platform == .maccatalyst {
                 array.append("-Dcocoa=disabled")
                 array.append("-Dcoreaudio=disabled")

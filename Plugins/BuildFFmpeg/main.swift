@@ -93,11 +93,11 @@ extension Build {
         }
 
         if librarys.isEmpty {
-            librarys.append(contentsOf: [.libshaderc, .vulkan, .lcms2, .libplacebo, .libdav1d, .gmp, .nettle, .gnutls, .readline, .libsmbclient, .libsrt, .libzvbi, .libfreetype, .libfribidi, .libharfbuzz, .libass, .libfontconfig, .libbluray, .FFmpeg, .libmpv])
+            librarys.append(contentsOf: [.libshaderc, .vulkan, .lcms2, .libplacebo, .libdav1d, .gmp, .nettle, .gnutls, .readline, .libsmbclient, .libsrt, .libzvbi, .libfreetype, .libfribidi, .libharfbuzz, .libass, .libfontconfig, .libbluray, .libx265, .FFmpeg, .libmpv])
         }
         if BaseBuild.disableGPL {
             librarys.removeAll {
-                $0 == .readline || $0 == .libsmbclient
+                $0.isGPL
             }
         } else {
             Build.ffmpegConfiguers.append("--enable-gpl")
@@ -143,11 +143,11 @@ extension Build {
 }
 
 enum Library: String, CaseIterable {
-    case libglslang, libshaderc, vulkan, lcms2, libdovi, libdav1d, libplacebo, libfreetype, libharfbuzz, libfribidi, libass, gmp, readline, nettle, gnutls, libsmbclient, libsrt, libzvbi, libfontconfig, libbluray, FFmpeg, libmpv, openssl, libtls, boringssl, libpng, libupnp, libnfs, libsmb2
+    case libglslang, libshaderc, vulkan, lcms2, libdovi, libdav1d, libplacebo, libfreetype, libharfbuzz, libfribidi, libass, gmp, readline, nettle, gnutls, libsmbclient, libsrt, libzvbi, libfontconfig, libbluray, libx264, libx265, FFmpeg, libmpv, openssl, libtls, boringssl, libpng, libupnp, libnfs, libsmb2
     var version: String {
         switch self {
         case .FFmpeg:
-            return "n7.0"
+            return "n7.0.1"
         case .libfreetype:
             return "VER-2-13-2"
         case .libfribidi:
@@ -155,7 +155,7 @@ enum Library: String, CaseIterable {
         case .libharfbuzz:
             return "5.3.1"
         case .libass:
-            return "0.17.1-branch"
+            return "0.17.3"
         case .libpng:
             return "v1.6.43"
         case .libmpv:
@@ -171,7 +171,7 @@ enum Library: String, CaseIterable {
         case .nettle:
             return "nettle_3.9.1_release_20230601"
         case .libdav1d:
-            return "1.1.0"
+            return "1.4.3"
         case .gmp:
             return "v6.2.1"
         case .libtls:
@@ -201,9 +201,13 @@ enum Library: String, CaseIterable {
         case .libbluray:
             return "1.3.4"
         case .libfontconfig:
-            return "2.14.2"
+            return "2.15.0"
         case .libsmb2:
             return "master"
+        case .libx265:
+            return "3.6"
+        case .libx264:
+            return "stable"
         }
     }
 
@@ -253,6 +257,10 @@ enum Library: String, CaseIterable {
             return "https://gitlab.freedesktop.org/fontconfig/fontconfig"
         case .libsmb2:
             return "https://github.com/sahlberg/libsmb2"
+        case .libx264:
+            return "https://code.videolan.org/videolan/x264"
+        case .libx265:
+            return "https://bitbucket.org/multicoreware/x265_git/src/master/"
         default:
             var value = rawValue
             if self != .libass, value.hasPrefix("lib") {
@@ -262,16 +270,24 @@ enum Library: String, CaseIterable {
         }
     }
 
-    var isFFmpegDependentLibrary: Bool {
+    var isGPL: Bool {
         switch self {
-        case .vulkan, .libshaderc, .libglslang, .lcms2, .libplacebo, .libdav1d, .gmp, .gnutls, .libsrt, .libzvbi, .libfontconfig, .libbluray:
+        case .libsmbclient, .libx264, .libx265, .readline:
             return true
-        case .openssl:
-            return false
-        case .libsmbclient:
-            return !BaseBuild.disableGPL
         default:
             return false
+        }
+    }
+
+    var isFFmpegDependentLibrary: Bool {
+        switch self {
+        case .openssl, .readline, .nettle, .libmpv, .boringssl, .libpng, .libupnp, .libnfs, .libsmb2:
+            return false
+        default:
+            if BaseBuild.disableGPL {
+                return !isGPL
+            }
+            return true
         }
     }
 
@@ -335,6 +351,10 @@ enum Library: String, CaseIterable {
             return BuildBluray()
         case .libsmb2:
             return BuildSMB2()
+        case .libx265:
+            return BuildX265()
+        case .libx264:
+            return BuildX264()
         }
     }
 }
@@ -349,7 +369,7 @@ class BaseBuild {
     static var gitCloneAll = false
     static var disableGPL = false
     let library: Library
-    let directoryURL: URL
+    var directoryURL: URL
     init(library: Library) {
         self.library = library
         directoryURL = URL.currentDirectory + "\(library.rawValue)-\(library.version)"
@@ -449,7 +469,9 @@ class BaseBuild {
                 "-DCMAKE_OSX_SYSROOT=\(platform.sdk.lowercased())",
                 "-DCMAKE_OSX_ARCHITECTURES=\(arch.rawValue)",
                 "-DCMAKE_INSTALL_PREFIX=\(thinDirPath)",
+                "-DCMAKE_SYSTEM_PROCESSOR=\(arch.targetCpu)",
                 "-DBUILD_SHARED_LIBS=0",
+                "-DENABLE_SHARED=0",
             ]
             arguments.append(contentsOf: self.arguments(platform: platform, arch: arch))
             try Utility.launch(path: cmake, arguments: arguments, currentDirectoryURL: buildURL, environment: environ)
@@ -610,11 +632,14 @@ class BaseBuild {
         """
         FileManager.default.createFile(atPath: frameworkDir.path + "/Modules/module.modulemap", contents: modulemap.data(using: .utf8), attributes: nil)
         var infoPath = frameworkDir
-        if platform == .macos {
+        if platform == .macos || platform == .maccatalyst {
             infoPath = infoPath + "Resources"
             try FileManager.default.createDirectory(at: infoPath, withIntermediateDirectories: true, attributes: nil)
         }
         createPlist(path: infoPath + "Info.plist", name: framework, minVersion: platform.minVersion, platform: platform.sdk)
+        if platform == .macos || platform == .maccatalyst {
+            try createFrameworkVersions(url: frameworkDir)
+        }
         return frameworkDir.path
     }
 
@@ -650,19 +675,19 @@ class BaseBuild {
         try Utility.launch(path: "/usr/bin/lipo", arguments: arguments)
     }
 
-    private func ceateMacOSFramework(url: URL) throws {
+    private func createFrameworkVersions(url: URL) throws {
         let version = url + "Versions/A"
-        try FileManager.default.createDirectory(at: version + "Resources", withIntermediateDirectories: true, attributes: nil)
-        try FileManager.default.createSymbolicLink(at: url + "Versions/Current", withDestinationURL: version)
+        try FileManager.default.createDirectory(at: version, withIntermediateDirectories: true, attributes: nil)
+        try FileManager.default.createSymbolicLink(atPath: (url + "Versions/Current").path, withDestinationPath: "A")
         try FileManager.default.moveItem(at: url + "Modules", to: version + "Modules")
-        try FileManager.default.createSymbolicLink(at: url + "Modules", withDestinationURL: version + "Modules")
+        try FileManager.default.createSymbolicLink(atPath: (url + "Modules").path, withDestinationPath: "Versions/Current/Modules")
         try FileManager.default.moveItem(at: url + "Headers", to: version + "Headers")
-        try FileManager.default.createSymbolicLink(at: url + "Headers", withDestinationURL: version + "Headers")
-        try FileManager.default.moveItem(at: url + "Info.plist", to: version + "Resources/Info.plist")
-        try FileManager.default.createSymbolicLink(at: url + "Resources", withDestinationURL: version + "Resources")
+        try FileManager.default.createSymbolicLink(atPath: (url + "Headers").path, withDestinationPath: "Versions/Current/Headers")
+        try FileManager.default.moveItem(at: url + "Resources", to: version + "Resources")
+        try FileManager.default.createSymbolicLink(atPath: (url + "Resources").path, withDestinationPath: "Versions/Current/Resources")
         let name = String(url.lastPathComponent.split(separator: ".").first ?? "")
         try FileManager.default.moveItem(at: url + name, to: version + name)
-        try FileManager.default.createSymbolicLink(at: url + name, withDestinationURL: version + name)
+        try FileManager.default.createSymbolicLink(atPath: (url + name).path, withDestinationPath: "Versions/Current/\(name)")
     }
 
     var isFramework: Bool {
@@ -842,10 +867,8 @@ enum PlatformType: String, CaseIterable {
 
     var architectures: [ArchType] {
         switch self {
-        case .ios, .xros, .watchos, .android:
+        case .ios, .xros, .tvos, .watchos, .android:
             return [.arm64]
-        case .tvos:
-            return [.arm64, .arm64e]
         case .isimulator, .tvsimulator, .watchsimulator:
             return [.arm64, .x86_64]
         case .xrsimulator:
@@ -1174,5 +1197,54 @@ class BuildSMB2: BaseBuild {
 
     init() {
         super.init(library: .libsmb2)
+    }
+}
+
+class BuildX265: BaseBuild {
+    init() {
+        super.init(library: .libx265)
+        directoryURL = directoryURL + "source"
+    }
+
+    override func arguments(platform: PlatformType, arch: ArchType) -> [String] {
+        var arg = ["-DSTATIC_LINK_CRT=1",
+                   "-DENABLE_PIC=1",
+                   "-DENABLE_CLI=0",
+                   "-DHIGH_BIT_DEPTH=1"]
+        if platform == .maccatalyst, arch == .x86_64 {
+            arg.append(contentsOf: ["-DENABLE_ASSEMBLY=0", "-DCROSS_COMPILE_ARM=0"])
+        } else if arch == .x86_64 {
+            arg.append(contentsOf: ["-DENABLE_ASSEMBLY=1", "-DCROSS_COMPILE_ARM=0"])
+        } else {
+            arg.append(contentsOf: ["-DENABLE_ASSEMBLY=0", "-DCROSS_COMPILE_ARM=1"])
+        }
+        return arg
+    }
+}
+
+class BuildX264: BaseBuild {
+    init() {
+        super.init(library: .libx264)
+    }
+
+    override func environment(platform: PlatformType, arch: ArchType) -> [String: String] {
+        var env = super.environment(platform: platform, arch: arch)
+        if arch == .x86_64 {
+            env["AS"] = "nasm"
+        }
+        return env
+    }
+
+    override func arguments(platform: PlatformType, arch: ArchType) -> [String] {
+        var arg = ["--enable-static",
+                   "--enable-pic",
+                   "--host=\(platform.host(arch: arch))",
+                   "--prefix=\(thinDir(platform: platform, arch: arch).path)",
+                   "--sysroot=\(platform.isysroot)",
+                   "--disable-cli"]
+        if arch == .x86_64 {
+            arg.append("--disable-asm")
+        }
+        return arg
     }
 }
