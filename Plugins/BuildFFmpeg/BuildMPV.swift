@@ -23,7 +23,6 @@ class BuildMPV: BaseBuild {
             "-Dplain-gl=enabled",
             "-Diconv=enabled",
             "-Dvulkan=enabled",
-            "-Dmoltenvk=enabled",
         ]
         if BaseBuild.disableGPL {
             array.append("-Dgpl=false")
