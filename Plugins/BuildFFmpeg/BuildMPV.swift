@@ -52,4 +52,17 @@ class BuildMPV: BaseBuild {
         }
         return array
     }
+
+    override func createFrameworkInclude(framework: String, platform: PlatformType, frameworkDir: URL) throws {
+        try super.createFrameworkInclude(framework: framework, platform: platform, frameworkDir: frameworkDir)
+        if platform == .macos {
+            for arch in platform.architectures where arch.executable {
+                let name = "mpv"
+                let prefix = thinDir(platform: platform, arch: arch)
+                let item = URL(fileURLWithPath: "/usr/local/bin/\(name)")
+                try? FileManager.default.removeItem(at: item)
+                try FileManager.default.copyItem(at: prefix + "bin" + name, to: item)
+            }
+        }
+    }
 }

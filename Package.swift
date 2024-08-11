@@ -20,9 +20,10 @@ let package = Package(
         .library(name: "Libswscale", targets: ["Libswscale"]),
         .library(name: "libass", targets: ["libfreetype", "libfribidi", "libharfbuzz", "libass"]),
         .library(name: "libmpv", targets: ["FFmpegKit", "libass", "libmpv"]),
-        .executable(name: "ffmpeg", targets: ["ffmpeg"]),
-        .executable(name: "ffplay", targets: ["ffplay"]),
-        .executable(name: "ffprobe", targets: ["ffprobe"]),
+        .library(name: "ffmpeg", targets: ["ffmpeg"]),
+        .library(name: "ffprobe", targets: ["ffprobe"]),
+        .executable(name: "ffmpegCmd", targets: ["ffmpegCmd"]),
+        .executable(name: "ffprobeCmd", targets: ["ffprobeCmd"]),
         .plugin(name: "BuildFFmpeg", targets: ["BuildFFmpeg"]),
     ],
     dependencies: [
@@ -97,16 +98,28 @@ let package = Package(
                 .define("VK_ENABLE_BETA_EXTENSIONS"),
             ]
         ),
-        .executableTarget(
+        .target(
+            name: "ffmpeg",
+            dependencies: [
+                "fftools",
+            ]
+        ),
+        .target(
             name: "ffprobe",
             dependencies: [
                 "fftools",
             ]
         ),
         .executableTarget(
-            name: "ffmpeg",
+            name: "ffprobeCmd",
             dependencies: [
-                "fftools",
+                "ffprobe",
+            ]
+        ),
+        .executableTarget(
+            name: "ffmpegCmd",
+            dependencies: [
+                "ffmpeg",
             ]
         ),
         .systemLibrary(

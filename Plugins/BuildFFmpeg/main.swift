@@ -654,8 +654,7 @@ class BaseBuild {
         }
     }
 
-    func createFrameworkLib(framework: String, platform: PlatformType, frameworkDir _: URL) throws {
-        let frameworkDir = URL.currentDirectory + [library.rawValue, platform.rawValue, "\(framework).framework"]
+    func createFrameworkLib(framework: String, platform: PlatformType, frameworkDir: URL) throws {
         var arguments = ["-create"]
         for arch in platform.architectures {
             let prefix = thinDir(platform: platform, arch: arch)

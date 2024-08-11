@@ -927,7 +927,7 @@ static int64_t getmaxrss(void)
 #endif
 }
 
-int main(int argc, char **argv)
+int ffmpeg_execute(int argc, char **argv)
 {
     Scheduler *sch = NULL;
 

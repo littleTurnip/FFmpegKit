@@ -4606,7 +4606,7 @@ static inline int check_section_show_entries(int section_id)
             do_show_##varname = 1;                                      \
     } while (0)
 
-int main(int argc, char **argv)
+int ffprobe_execute(int argc, char **argv)
 {
     const Writer *w;
     WriterContext *wctx;
