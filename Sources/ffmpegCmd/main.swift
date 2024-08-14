@@ -1,6 +1,6 @@
 //
-//  File.swift
-//  
+//  main.swift
+//
 //
 //  Created by kintan on 8/11/24.
 //
@@ -13,4 +13,5 @@ arguments.insert("ffmpeg", at: 0)
 var argv = arguments.map {
     UnsafeMutablePointer(mutating: ($0 as NSString).utf8String)
 }
+
 ffmpeg_execute(Int32(arguments.count), &argv)
