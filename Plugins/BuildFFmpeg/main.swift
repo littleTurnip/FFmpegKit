@@ -31,6 +31,8 @@ extension Build {
 
 extension Build {
     static var ffmpegConfiguers = [String]()
+    static var isDebug = false
+
     static func performCommand(arguments: [String]) throws {
         print(arguments)
         if arguments.contains("h") || arguments.contains("-h") || arguments.contains("--help") {
@@ -53,7 +55,6 @@ extension Build {
         }
         FileManager.default.changeCurrentDirectoryPath(path.path)
         var librarys = [Library]()
-        var isFFmpegDebug = false
         for argument in arguments {
             if argument == "notRecompile" {
                 BaseBuild.notRecompile = true
@@ -62,7 +63,7 @@ extension Build {
             } else if argument == "disableGPL" {
                 BaseBuild.disableGPL = true
             } else if argument == "enable-debug" {
-                isFFmpegDebug = true
+                isDebug = true
             } else if argument.hasPrefix("platforms=") {
                 let values = String(argument.suffix(argument.count - "platforms=".count))
                 let platforms = values.split(separator: ",").compactMap {
@@ -83,7 +84,7 @@ extension Build {
                 Build.ffmpegConfiguers.append(argument)
             }
         }
-        if isFFmpegDebug {
+        if isDebug {
             Build.ffmpegConfiguers.append("--enable-debug")
             Build.ffmpegConfiguers.append("--enable-debug=3")
             Build.ffmpegConfiguers.append("--disable-stripping")
@@ -143,7 +144,7 @@ extension Build {
 }
 
 enum Library: String, CaseIterable {
-    case libglslang, libshaderc, vulkan, lcms2, libdovi, libdav1d, libplacebo, libfreetype, libharfbuzz, libfribidi, libass, gmp, readline, nettle, gnutls, libsmbclient, libsrt, libzvbi, libfontconfig, libbluray, libx264, libx265, FFmpeg, libmpv, openssl, libtls, boringssl, libpng, libupnp, libnfs, libsmb2
+    case libglslang, libshaderc, vulkan, lcms2, libdovi, libdav1d, libplacebo, libfreetype, libharfbuzz, libfribidi, libass, gmp, readline, nettle, gnutls, libsmbclient, libsrt, libzvbi, libfontconfig, libbluray, libx264, libx265, FFmpeg, libmpv, openssl, libtls, boringssl, libpng, libupnp, libnfs, libsmb2, libarchive
     var version: String {
         switch self {
         case .FFmpeg:
@@ -208,6 +209,8 @@ enum Library: String, CaseIterable {
             return "3.6"
         case .libx264:
             return "stable"
+        case .libarchive:
+            return "v3.7.4"
         }
     }
 
@@ -263,7 +266,7 @@ enum Library: String, CaseIterable {
             return "https://bitbucket.org/multicoreware/x265_git/src/master/"
         default:
             var value = rawValue
-            if self != .libass, value.hasPrefix("lib") {
+            if self != .libass, self != .libarchive, value.hasPrefix("lib") {
                 value = String(value.dropFirst(3))
             }
             return "https://github.com/\(value)/\(value)"
@@ -355,6 +358,8 @@ enum Library: String, CaseIterable {
             return BuildX265()
         case .libx264:
             return BuildX264()
+        case .libarchive:
+            return BuildArchive()
         }
     }
 }
@@ -465,7 +470,7 @@ class BaseBuild {
             var arguments = [
                 makeLists.path,
                 "-DCMAKE_VERBOSE_MAKEFILE=0",
-                "-DCMAKE_BUILD_TYPE=Release",
+                "-DCMAKE_BUILD_TYPE=\(Build.isDebug ? "Debug" : "Release")",
                 "-DCMAKE_OSX_SYSROOT=\(platform.sdk.lowercased())",
                 "-DCMAKE_OSX_ARCHITECTURES=\(arch.rawValue)",
                 "-DCMAKE_INSTALL_PREFIX=\(thinDirPath)",
@@ -779,7 +784,7 @@ class BaseBuild {
 
         [built-in options]
         default_library = 'static'
-        buildtype = 'release'
+        buildtype = '\(Build.isDebug ? "debug" : "release")'
         prefix = '\(prefix.path)'
         c_args = [\(cFlags)]
         cpp_args = [\(cFlags)]
@@ -1196,6 +1201,17 @@ class BuildSMB2: BaseBuild {
 
     init() {
         super.init(library: .libsmb2)
+    }
+}
+
+class BuildArchive: BaseBuild {
+    init() {
+        super.init(library: .libarchive)
+    }
+
+    override func arguments(platform _: PlatformType, arch _: ArchType) -> [String] {
+        var arg = ["-DENABLE_TEST=0"]
+        return arg
     }
 }
 
