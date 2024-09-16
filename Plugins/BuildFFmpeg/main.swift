@@ -182,7 +182,7 @@ enum Library: String, CaseIterable {
         case .boringssl:
             return "master"
         case .libplacebo:
-            return "v6.338.2"
+            return "v7.349.0"
         case .vulkan:
             return "v1.2.10-rc2"
         case .libshaderc:
@@ -284,7 +284,7 @@ enum Library: String, CaseIterable {
 
     var isFFmpegDependentLibrary: Bool {
         switch self {
-        case .openssl, .readline, .nettle, .libmpv, .boringssl, .libpng, .libupnp, .libnfs, .libsmb2:
+        case .openssl, .readline, .nettle, .libmpv, .boringssl, .libpng, .libupnp, .libnfs, .libsmb2, .libarchive:
             return false
         default:
             if BaseBuild.disableGPL {
