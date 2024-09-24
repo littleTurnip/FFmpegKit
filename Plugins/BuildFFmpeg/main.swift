@@ -160,7 +160,7 @@ enum Library: String, CaseIterable {
         case .libpng:
             return "v1.6.43"
         case .libmpv:
-            return "v0.38.0"
+            return "v0.39.0"
         case .openssl:
             return "openssl-3.3.0"
         case .libsrt:

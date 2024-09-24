@@ -20,7 +20,7 @@ dependencies: [
 
 ## Build Scripts
 ```bash
-swift package --disable-sandbox BuildFFmpeg
+swift package --disable-sandbox BuildFFmpeg disableGPL
 
 ```
 ## Executable product
