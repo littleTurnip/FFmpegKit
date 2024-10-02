@@ -184,9 +184,9 @@ enum Library: String, CaseIterable {
         case .libplacebo:
             return "v7.349.0"
         case .vulkan:
-            return "v1.2.11-rc1"
+            return "v1.2.9"
         case .libshaderc:
-            return "v2024.1"
+            return "v2024.3"
         case .readline:
             return "readline-8.2"
         case .libglslang:
