@@ -76,7 +76,7 @@ class BuildVulkan: BaseBuild {
 
                 Name: Vulkan-Loader
                 Description: Vulkan Loader
-                Version: 1.3.283
+                Version: 1.3.296
                 Libs: -L${libdir} -lMoltenVK -lc++ \(libframework)
                 Cflags: -I${includedir}
                 """
