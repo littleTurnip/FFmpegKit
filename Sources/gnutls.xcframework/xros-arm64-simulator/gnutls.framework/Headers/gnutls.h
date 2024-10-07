@@ -49,14 +49,14 @@
 extern "C" {
 #endif
 
-#define GNUTLS_VERSION "3.8.3"
+#define GNUTLS_VERSION "3.8.6"
 
 /* clang-format off */
 #define GNUTLS_VERSION_MAJOR 3
 #define GNUTLS_VERSION_MINOR 8
-#define GNUTLS_VERSION_PATCH 3
+#define GNUTLS_VERSION_PATCH 6
 
-#define GNUTLS_VERSION_NUMBER 0x030803
+#define GNUTLS_VERSION_NUMBER 0x030806
 /* clang-format on */
 
 #define GNUTLS_CIPHER_RIJNDAEL_128_CBC GNUTLS_CIPHER_AES_128_CBC
@@ -318,8 +318,8 @@ typedef enum {
  * @GNUTLS_MAC_SHA3_384: Reserved; unimplemented.
  * @GNUTLS_MAC_SHA3_512: Reserved; unimplemented.
  * @GNUTLS_MAC_GOST28147_TC26Z_IMIT: The GOST 28147-89 working in IMIT mode with TC26 Z S-box.
- * @GNUTLS_MAC_SHAKE_128: Reserved; unimplemented.
- * @GNUTLS_MAC_SHAKE_256: Reserved; unimplemented.
+ * @GNUTLS_MAC_SHAKE_128: The SHAKE128 extendable output function.
+ * @GNUTLS_MAC_SHAKE_256: The SHAKE256 extendable output function.
  * @GNUTLS_MAC_MAGMA_OMAC: GOST R 34.12-2015 (Magma) in OMAC (CMAC) mode.
  * @GNUTLS_MAC_KUZNYECHIK_OMAC: GOST R 34.12-2015 (Kuznyechik) in OMAC (CMAC) mode.
  *
@@ -359,7 +359,9 @@ typedef enum {
 	GNUTLS_MAC_SHAKE_128 = 209,
 	GNUTLS_MAC_SHAKE_256 = 210,
 	GNUTLS_MAC_MAGMA_OMAC = 211,
-	GNUTLS_MAC_KUZNYECHIK_OMAC = 212
+	GNUTLS_MAC_KUZNYECHIK_OMAC = 212,
+	GNUTLS_MAC_PBMAC1 =
+		213 /* indicates that PBMAC1 is embedded the PKCS#12 structure */
 } gnutls_mac_algorithm_t;
 
 /**
@@ -382,8 +384,8 @@ typedef enum {
  * @GNUTLS_DIG_GOSTR_94: GOST R 34.11-94 algorithm.
  * @GNUTLS_DIG_STREEBOG_256: GOST R 34.11-2001 (Streebog) algorithm, 256 bit.
  * @GNUTLS_DIG_STREEBOG_512: GOST R 34.11-2001 (Streebog) algorithm, 512 bit.
- * @GNUTLS_DIG_SHAKE_128: Reserved; unimplemented.
- * @GNUTLS_DIG_SHAKE_256: Reserved; unimplemented.
+ * @GNUTLS_DIG_SHAKE_128: The SHAKE128 extendable output function.
+ * @GNUTLS_DIG_SHAKE_256: The SHAKE256 extendable output function.
  *
  * Enumeration of different digest (hash) algorithms.
  */
@@ -876,6 +878,7 @@ typedef enum gnutls_certificate_print_formats {
  * gnutls_pk_algorithm_t:
  * @GNUTLS_PK_UNKNOWN: Unknown public-key algorithm.
  * @GNUTLS_PK_RSA: RSA public-key algorithm.
+ * @GNUTLS_PK_RSA_OAEP: RSA public-key algorithm, with OAEP padding.
  * @GNUTLS_PK_RSA_PSS: RSA public-key algorithm, with PSS padding.
  * @GNUTLS_PK_DSA: DSA public-key algorithm.
  * @GNUTLS_PK_DH: Diffie-Hellman algorithm. Used to generate parameters.
@@ -904,7 +907,8 @@ typedef enum {
 	GNUTLS_PK_GOST_12_512 = 10,
 	GNUTLS_PK_ECDH_X448 = 11,
 	GNUTLS_PK_EDDSA_ED448 = 12,
-	GNUTLS_PK_MAX = GNUTLS_PK_EDDSA_ED448
+	GNUTLS_PK_RSA_OAEP = 13,
+	GNUTLS_PK_MAX = GNUTLS_PK_RSA_OAEP
 } gnutls_pk_algorithm_t;
 
 const char *gnutls_pk_algorithm_get_name(gnutls_pk_algorithm_t algorithm);
@@ -3378,6 +3382,7 @@ gnutls_transport_is_ktls_enabled(gnutls_session_t session);
 #define GNUTLS_E_TOO_MANY_HANDSHAKE_PACKETS -81
 #define GNUTLS_E_RECEIVED_DISALLOWED_NAME -82 /* GNUTLS_A_ILLEGAL_PARAMETER */
 #define GNUTLS_E_CERTIFICATE_REQUIRED -112 /* GNUTLS_A_CERTIFICATE_REQUIRED */
+#define GNUTLS_E_UNSUPPORTED_ENCRYPTION_ALGORITHM -113
 
 /* returned if you need to generate temporary RSA
    * parameters. These are needed for export cipher suites.

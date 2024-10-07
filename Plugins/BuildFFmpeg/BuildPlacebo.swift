@@ -44,7 +44,7 @@ class BuildVulkan: BaseBuild {
         }
         arguments = platforms().map(\.name)
         let xcframeworkURL = directoryURL + "Package/Release/MoltenVK/static/MoltenVK.xcframework"
-        if !FileManager.default.fileExists(atPath: xcframeworkURL.path) || !BaseBuild.notRecompile {
+        if !FileManager.default.fileExists(atPath: xcframeworkURL.path), !BaseBuild.notRecompile {
             try Utility.launch(path: "/usr/bin/make", arguments: arguments, currentDirectoryURL: directoryURL)
         }
         let toURL = URL.currentDirectory() + "../Sources/MoltenVK.xcframework"

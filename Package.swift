@@ -18,7 +18,7 @@ let package = Package(
         .library(name: "Libavutil", targets: ["Libavutil"]),
         .library(name: "Libswresample", targets: ["Libswresample"]),
         .library(name: "Libswscale", targets: ["Libswscale"]),
-        .library(name: "libass", targets: ["libfreetype", "libfribidi", "libharfbuzz", "libass"]),
+        .library(name: "libass", targets: ["libfreetype", "libfribidi", "libharfbuzz", "libfontconfig", "libass"]),
         .library(name: "libmpv", targets: ["FFmpegKit", "libass", "libmpv"]),
         .library(name: "ffmpeg", targets: ["ffmpeg"]),
         .library(name: "ffprobe", targets: ["ffprobe"]),

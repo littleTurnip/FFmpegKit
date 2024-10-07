@@ -47,6 +47,10 @@ enum pl_color_system {
 
 PL_API bool pl_color_system_is_ycbcr_like(enum pl_color_system sys);
 
+// Returns the human-readable, friendly name of the color system.
+PL_API const char *pl_color_system_name(enum pl_color_system sys);
+PL_API extern const char *const pl_color_system_names[PL_COLOR_SYSTEM_COUNT];
+
 // Returns true for color systems that are linear transformations of the RGB
 // equivalent, i.e. are simple matrix multiplications. For color systems with
 // this property, `pl_color_repr_decode` is sufficient for conversion to RGB.
@@ -90,9 +94,10 @@ enum pl_color_levels {
 
 // The alpha representation mode.
 enum pl_alpha_mode {
-    PL_ALPHA_UNKNOWN = 0,   // or no alpha channel present
+    PL_ALPHA_UNKNOWN = 0,
     PL_ALPHA_INDEPENDENT,   // alpha channel is separate from the video
     PL_ALPHA_PREMULTIPLIED, // alpha channel is multiplied into the colors
+    PL_ALPHA_NONE,          // alpha channel explicitly ignored (or absent)
     PL_ALPHA_MODE_COUNT,
 };
 
@@ -216,6 +221,10 @@ enum pl_color_primaries {
 
 PL_API bool pl_color_primaries_is_wide_gamut(enum pl_color_primaries prim);
 
+// Returns the human-readable, friendly name of the color primaries.
+PL_API const char *pl_color_primaries_name(enum pl_color_primaries prim);
+PL_API extern const char *const pl_color_primaries_names[PL_COLOR_PRIM_COUNT];
+
 // Guesses the best primaries based on a resolution. This always guesses
 // conservatively, i.e. it will never return a wide gamut color space even if
 // the resolution is 4K.
@@ -244,6 +253,10 @@ enum pl_color_transfer {
     PL_COLOR_TRC_S_LOG2,        // Sony S-Log2
     PL_COLOR_TRC_COUNT
 };
+
+// Returns the human-readable, friendly name of the color transfer.
+PL_API const char *pl_color_transfer_name(enum pl_color_transfer trc);
+PL_API extern const char *const pl_color_transfer_names[PL_COLOR_TRC_COUNT];
 
 // Returns the nominal peak of a given transfer function, relative to the
 // reference white. This refers to the highest encodable signal level.
@@ -451,6 +464,16 @@ PL_API bool pl_color_space_is_hdr(const struct pl_color_space *csp);
 // well as for HLG.
 PL_API bool pl_color_space_is_black_scaled(const struct pl_color_space *csp);
 
+// Linearize/delinearize input color, given a specified color space. In essence,
+// this corresponds to the ITU-R EOTF and its inverse (not the OETF).
+// The linear color will be scaled so that 1.0 is the diffuse white. The
+// non-linear color will be scaled so that 1.0 is the maximum representable
+// value.
+//
+// Note: This is a no-op if csp->transfer == PL_COLOR_TRC_LINEAR.
+PL_API void pl_color_linearize(const struct pl_color_space *csp, float color[3]);
+PL_API void pl_color_delinearize(const struct pl_color_space *csp, float color[3]);
+
 struct pl_nominal_luma_params {
     // The color space to infer luminance from
     const struct pl_color_space *color;
@@ -478,10 +501,6 @@ struct pl_nominal_luma_params {
 
 // Returns the effective luminance described by a pl_color_space.
 PL_API void pl_color_space_nominal_luma_ex(const struct pl_nominal_luma_params *params);
-
-// Backwards compatibility wrapper for `pl_color_space_nominal_luma_ex`
-PL_DEPRECATED PL_API void pl_color_space_nominal_luma(const struct pl_color_space *csp,
-                                                      float *out_min, float *out_max);
 
 // Replaces unknown values in the first struct by those of the second struct.
 PL_API void pl_color_space_merge(struct pl_color_space *orig,
@@ -582,7 +601,7 @@ PL_API pl_matrix3x3 pl_get_color_mapping_matrix(const struct pl_raw_primaries *s
                                                 enum pl_rendering_intent intent);
 
 // Return a chromatic adaptation matrix, which converts from one white point to
-// another, using the Bradford matrix. This is an RGB->RGB transformation.
+// another, using the CAT16 matrix. This is an RGB->RGB transformation.
 PL_API pl_matrix3x3 pl_get_adaptation_matrix(struct pl_cie_xy src, struct pl_cie_xy dst);
 
 // Returns true if 'b' is entirely contained in 'a'. Useful for figuring out if

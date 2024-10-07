@@ -265,7 +265,7 @@ PL_LIBAV_API void pl_map_hdr_metadata(struct pl_hdr_metadata *out,
         if (data->mdm->has_luminance) {
             out->max_luma = av_q2d(data->mdm->max_luminance);
             out->min_luma = av_q2d(data->mdm->min_luminance);
-            if (out->max_luma < 10.0 || out->min_luma >= out->max_luma)
+            if (out->max_luma < 5.0 || out->min_luma >= out->max_luma)
                 out->max_luma = out->min_luma = 0; /* sanity */
         }
         if (data->mdm->has_primaries) {
@@ -712,7 +712,7 @@ PL_LIBAV_API void pl_frame_from_avframe(struct pl_frame *out,
             .levels = pl_levels_from_av(frame->color_range),
             .alpha = (desc->flags & AV_PIX_FMT_FLAG_ALPHA)
                         ? PL_ALPHA_INDEPENDENT
-                        : PL_ALPHA_UNKNOWN,
+                        : PL_ALPHA_NONE,
 
             // For sake of simplicity, just use the first component's depth as
             // the authoritative color depth for the whole image. Usually, this
@@ -886,29 +886,49 @@ PL_LIBAV_API void pl_map_dovi_metadata(struct pl_dovi_metadata *out,
     }
 }
 
+PL_LIBAV_API void pl_map_avdovi_metadata(struct pl_color_space *color,
+                                         struct pl_color_repr *repr,
+                                         struct pl_dovi_metadata *dovi,
+                                         const AVDOVIMetadata *metadata)
+{
+    const AVDOVIRpuDataHeader *header;
+    const AVDOVIColorMetadata *dovi_color;
+#if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(59, 12, 100)
+    const AVDOVIDmData *dovi_ext;
+#endif
+    if (!color || !repr || !dovi)
+        return;
+
+    header = av_dovi_get_header(metadata);
+    dovi_color = av_dovi_get_color(metadata);
+    if (header->disable_residual_flag) {
+        pl_map_dovi_metadata(dovi, metadata);
+
+        repr->dovi = dovi;
+        repr->sys = PL_COLOR_SYSTEM_DOLBYVISION;
+        color->primaries = PL_COLOR_PRIM_BT_2020;
+        color->transfer = PL_COLOR_TRC_PQ;
+        color->hdr.min_luma =
+            pl_hdr_rescale(PL_HDR_PQ, PL_HDR_NITS, dovi_color->source_min_pq / 4095.0f);
+        color->hdr.max_luma =
+            pl_hdr_rescale(PL_HDR_PQ, PL_HDR_NITS, dovi_color->source_max_pq / 4095.0f);
+
+#if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(59, 12, 100)
+        if ((dovi_ext = av_dovi_find_level(metadata, 1))) {
+            color->hdr.max_pq_y = dovi_ext->l1.max_pq / 4095.0f;
+            color->hdr.avg_pq_y = dovi_ext->l1.avg_pq / 4095.0f;
+        }
+#endif
+    }
+}
+
 PL_LIBAV_API void pl_frame_map_avdovi_metadata(struct pl_frame *out_frame,
                                                struct pl_dovi_metadata *dovi,
                                                const AVDOVIMetadata *metadata)
 {
-    const AVDOVIRpuDataHeader *header;
-    const AVDOVIColorMetadata *color;
-    if (!dovi || !metadata)
+    if (!out_frame)
         return;
-
-    header = av_dovi_get_header(metadata);
-    color = av_dovi_get_color(metadata);
-    if (header->disable_residual_flag) {
-        pl_map_dovi_metadata(dovi, metadata);
-
-        out_frame->repr.dovi = dovi;
-        out_frame->repr.sys = PL_COLOR_SYSTEM_DOLBYVISION;
-        out_frame->color.primaries = PL_COLOR_PRIM_BT_2020;
-        out_frame->color.transfer = PL_COLOR_TRC_PQ;
-        out_frame->color.hdr.min_luma =
-            pl_hdr_rescale(PL_HDR_PQ, PL_HDR_NITS, color->source_min_pq / 4095.0f);
-        out_frame->color.hdr.max_luma =
-            pl_hdr_rescale(PL_HDR_PQ, PL_HDR_NITS, color->source_max_pq / 4095.0f);
-    }
+    pl_map_avdovi_metadata(&out_frame->color, &out_frame->repr, dovi, metadata);
 }
 #endif // PL_HAVE_LAV_DOLBY_VISION
 
@@ -960,18 +980,11 @@ struct pl_avframe_priv {
     pl_tex planar; // for planar vulkan textures
 };
 
-static void pl_fix_hwframe_sample_depth(struct pl_frame *out, const AVFrame *frame)
+static void pl_fix_hwframe_sample_depth(struct pl_frame *out)
 {
-    const AVHWFramesContext *hwfc = (AVHWFramesContext *) frame->hw_frames_ctx->data;
     pl_fmt fmt = out->planes[0].texture->params.format;
     struct pl_bit_encoding *bits = &out->repr.bits;
-
     bits->sample_depth = fmt->component_depth[0];
-
-    switch (hwfc->sw_format) {
-    case AV_PIX_FMT_P010: bits->bit_shift = 6; break;
-    default: break;
-    }
 }
 
 static bool pl_map_avframe_drm(pl_gpu gpu, struct pl_frame *out,
@@ -1015,7 +1028,13 @@ static bool pl_map_avframe_drm(pl_gpu gpu, struct pl_frame *out,
             return false;
     }
 
-    pl_fix_hwframe_sample_depth(out, frame);
+    pl_fix_hwframe_sample_depth(out);
+
+    switch (hwfc->sw_format) {
+    case AV_PIX_FMT_P010: out->repr.bits.bit_shift = 6; break;
+    default: break;
+    }
+
     return true;
 }
 
@@ -1157,7 +1176,7 @@ static bool pl_map_avframe_vulkan(pl_gpu gpu, struct pl_frame *out,
 
     out->acquire = pl_acquire_avframe;
     out->release = pl_release_avframe;
-    pl_fix_hwframe_sample_depth(out, frame);
+    pl_fix_hwframe_sample_depth(out);
     return true;
 }
 
@@ -1197,7 +1216,7 @@ PL_LIBAV_API bool pl_map_avframe_ex(pl_gpu gpu, struct pl_frame *out,
             const AVDOVIRpuDataHeader *header = av_dovi_get_header(metadata);
             // Only automatically map DoVi RPUs that don't require an EL
             if (header->disable_residual_flag)
-                pl_frame_map_avdovi_metadata(out, &priv->dovi, metadata);
+                pl_map_avdovi_metadata(&out->color, &out->repr, &priv->dovi, metadata);
         }
 
 #ifdef PL_HAVE_LIBDOVI

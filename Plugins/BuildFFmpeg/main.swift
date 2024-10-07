@@ -94,7 +94,7 @@ extension Build {
         }
 
         if librarys.isEmpty {
-            librarys.append(contentsOf: [.libshaderc, .vulkan, .lcms2, .libplacebo, .libdav1d, .gmp, .nettle, .gnutls, .readline, .libsmbclient, .libsrt, .libzvbi, .libfreetype, .libfribidi, .libharfbuzz, .libass, .libfontconfig, .libbluray, .libx265, .FFmpeg, .libmpv])
+            librarys.append(contentsOf: [.libshaderc, .vulkan, .lcms2, .libdav1d, .libplacebo, .gmp, .nettle, .gnutls, .libsrt, .libfreetype, .libfribidi, .libharfbuzz, .libfontconfig, .libass, .libzvbi, .libbluray, .libx264, .libx265, .FFmpeg, .libmpv])
         }
         if BaseBuild.disableGPL {
             librarys.removeAll {
@@ -111,7 +111,7 @@ extension Build {
     static func printHelp() {
         print("""
         Usage: swift package BuildFFmpeg [OPTION]...
-        Default Build: swift package --disable-sandbox BuildFFmpeg enable-libshaderc enable-vulkan enable-lcms2 enable-libdav1d enable-libplacebo enable-gmp enable-nettle enable-gnutls enbale-readline enable-libsmbclient enable-libsrt enable-libzvbi enable-libfreetype enable-libfribidi enable-libharfbuzz enable-libass enable-FFmpeg enable-libmpv
+        Default Build: swift package --disable-sandbox BuildFFmpeg enable-libshaderc enable-vulkan enable-lcms2 enable-libdav1d enable-libplacebo enable-gmp enable-nettle enable-gnutls  enable-libsrt enable-libfreetype enable-libfribidi enable-libharfbuzz enable-libfontconfig enable-libass enable-libbluray enable-libzvbi enable-libx264 enable-libx265 enable-FFmpeg enable-libmpv
 
         Options:
             h, -h, --help       display this help and exit
@@ -132,8 +132,8 @@ extension Build {
             enable-libsrt       depend enable-openssl or enable-gnutls
             enable-libfreetype  build with libfreetype
             enable-libharfbuzz  depend enable-libfreetype
-            enable-libass       depend enable-libfreetype enable-libfribidi enable-libharfbuzz
             enable-libfontconfig depend enable-libfreetype
+            enable-libass       depend enable-libfreetype enable-libfribidi enable-libharfbuzz enable-libfontconfig
             enable-libbluray    depend enable-libfreetype enable-libfontconfig
             enable-libzvbi      build with libzvbi
             enable-FFmpeg       build with FFmpeg
@@ -150,15 +150,15 @@ enum Library: String, CaseIterable {
         case .FFmpeg:
             return "n7.1"
         case .libfreetype:
-            return "VER-2-13-2"
+            return "VER-2-13-3"
         case .libfribidi:
-            return "v1.0.12"
+            return "v1.0.16"
         case .libharfbuzz:
-            return "5.3.1"
+            return "10.0.1"
         case .libass:
             return "0.17.3"
         case .libpng:
-            return "v1.6.43"
+            return "v1.6.44"
         case .libmpv:
             return "v0.39.0"
         case .openssl:
@@ -168,13 +168,14 @@ enum Library: String, CaseIterable {
         case .libsmbclient:
             return "samba-4.15.13"
         case .gnutls:
-            return "3.8.5"
+            // 3.8.7会有一个编译错误。需要等待3.8.8版本
+            return "3.8.6"
         case .nettle:
-            return "nettle_3.9.1_release_20230601"
+            return "nettle_3.10_release_20240616"
         case .libdav1d:
             return "1.4.3"
         case .gmp:
-            return "v6.2.1"
+            return "6.3.0"
         case .libtls:
             return "OPENBSD_7_3"
         case .libzvbi:
@@ -227,7 +228,7 @@ enum Library: String, CaseIterable {
         case .nettle:
             return "https://git.lysator.liu.se/nettle/nettle"
         case .gmp:
-            return "https://github.com/alisw/GMP"
+            return "https://github.com/kingslay/GMP"
         case .libdav1d:
             return "https://github.com/videolan/dav1d"
         case .libtls:
@@ -275,7 +276,7 @@ enum Library: String, CaseIterable {
 
     var isGPL: Bool {
         switch self {
-        case .libsmbclient, .libx264, .libx265, .readline:
+        case .readline, .libsmbclient, .libx264, .libx265:
             return true
         default:
             return false
