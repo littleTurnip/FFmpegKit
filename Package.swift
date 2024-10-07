@@ -22,6 +22,7 @@ let package = Package(
         .library(name: "libmpv", targets: ["FFmpegKit", "libass", "libmpv"]),
         .library(name: "ffmpeg", targets: ["ffmpeg"]),
         .library(name: "ffprobe", targets: ["ffprobe"]),
+        .executable(name: "ffplay", targets: ["ffplay"]),
         .executable(name: "ffmpegCmd", targets: ["ffmpegCmd"]),
         .executable(name: "ffprobeCmd", targets: ["ffprobeCmd"]),
         .plugin(name: "BuildFFmpeg", targets: ["BuildFFmpeg"]),
