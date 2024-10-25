@@ -94,7 +94,7 @@ extension Build {
         }
 
         if librarys.isEmpty {
-            librarys.append(contentsOf: [.libshaderc, .vulkan, .lcms2, .libdav1d, .libplacebo, .gmp, .nettle, .gnutls, .libsrt, .libfreetype, .libfribidi, .libharfbuzz, .libfontconfig, .libass, .libzvbi, .libbluray, .libx264, .libx265, .FFmpeg, .libmpv])
+            librarys.append(contentsOf: [.libshaderc, .vulkan, .lcms2, .libdav1d, .libplacebo, .gmp, .nettle, .gnutls, .libsrt, .libfreetype, .libfribidi, .libharfbuzz, .libfontconfig, .libass, .libzvbi, .libbluray, .libopus, .libx264, .libx265, .FFmpeg, .libmpv])
         }
         if BaseBuild.disableGPL {
             librarys.removeAll {
@@ -144,7 +144,7 @@ extension Build {
 }
 
 enum Library: String, CaseIterable {
-    case libglslang, libshaderc, vulkan, lcms2, libdovi, libdav1d, libplacebo, libfreetype, libharfbuzz, libfribidi, libass, gmp, readline, nettle, gnutls, libsmbclient, libsrt, libzvbi, libfontconfig, libbluray, libx264, libx265, FFmpeg, libmpv, openssl, libtls, boringssl, libpng, libupnp, libnfs, libsmb2, libarchive
+    case libglslang, libshaderc, vulkan, lcms2, libdovi, libdav1d, libplacebo, libfreetype, libharfbuzz, libfribidi, libass, gmp, readline, nettle, gnutls, libsmbclient, libsrt, libzvbi, libfontconfig, libbluray, libopus, libx264, libx265, FFmpeg, libmpv, openssl, libtls, boringssl, libpng, libupnp, libnfs, libsmb2, libarchive
     var version: String {
         switch self {
         case .FFmpeg:
@@ -212,6 +212,8 @@ enum Library: String, CaseIterable {
             return "stable"
         case .libarchive:
             return "v3.7.4"
+        case .libopus:
+            return "v1.5.2"
         }
     }
 
@@ -265,6 +267,8 @@ enum Library: String, CaseIterable {
             return "https://code.videolan.org/videolan/x264"
         case .libx265:
             return "https://bitbucket.org/multicoreware/x265_git/src/master/"
+        case .libopus:
+            return "https://github.com/xiph/opus"
         default:
             var value = rawValue
             if self != .libass, self != .libarchive, value.hasPrefix("lib") {
@@ -361,6 +365,8 @@ enum Library: String, CaseIterable {
             return BuildX264()
         case .libarchive:
             return BuildArchive()
+        case .libopus:
+            return BuildOpus()
         }
     }
 }
@@ -1262,5 +1268,15 @@ class BuildX264: BaseBuild {
             arg.append("--disable-asm")
         }
         return arg
+    }
+}
+
+class BuildOpus: BaseBuild {
+    init() {
+        super.init(library: .libopus)
+        let autogen = directoryURL + "autogen.sh"
+        if FileManager.default.fileExists(atPath: autogen.path) {
+            try? Utility.launch(executableURL: autogen, arguments: [], currentDirectoryURL: directoryURL, environment: [:])
+        }
     }
 }

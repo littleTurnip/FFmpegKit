@@ -43,6 +43,7 @@ let package = Package(
                 "libsrt",
                 "libfreetype", "libfribidi", "libharfbuzz", "libass",
                 "libfontconfig",
+                "libopus",
                 .target(name: "libbluray", condition: .when(platforms: [.macOS])),
                 "gmp", "nettle", "hogweed", "gnutls",
 //                "libsmbclient",
@@ -226,6 +227,10 @@ let package = Package(
         .binaryTarget(
             name: "libmpv",
             path: "Sources/libmpv.xcframework"
+        ),
+        .binaryTarget(
+            name: "libopus",
+            path: "Sources/libopus.xcframework"
         ),
         .binaryTarget(
             name: "gmp",
