@@ -111,7 +111,7 @@ extension Build {
     static func printHelp() {
         print("""
         Usage: swift package BuildFFmpeg [OPTION]...
-        Default Build: swift package --disable-sandbox BuildFFmpeg enable-libshaderc enable-vulkan enable-lcms2 enable-libdav1d enable-libplacebo enable-gmp enable-nettle enable-gnutls  enable-libsrt enable-libfreetype enable-libfribidi enable-libharfbuzz enable-libfontconfig enable-libass enable-libbluray enable-libzvbi enable-libx264 enable-libx265 enable-FFmpeg enable-libmpv
+        Default Build: swift package --disable-sandbox BuildFFmpeg enable-libshaderc enable-vulkan enable-lcms2 enable-libdav1d enable-libplacebo enable-gmp enable-nettle enable-gnutls  enable-libsrt enable-libfreetype enable-libfribidi enable-libharfbuzz enable-libfontconfig enable-libass enable-libbluray enable-libzvbi enable-libopus enable-libx264 enable-libx265 enable-FFmpeg enable-libmpv
 
         Options:
             h, -h, --help       display this help and exit
@@ -395,7 +395,9 @@ class BaseBuild {
         }
         let patch = URL.currentDirectory + "../Plugins/BuildFFmpeg/patch/\(library.rawValue)"
         if FileManager.default.fileExists(atPath: patch.path) {
-            _ = try? Utility.launch(path: "/usr/bin/git", arguments: ["stash"], currentDirectoryURL: directoryURL)
+            // 解决新增的文件，无法删除的问题
+            _ = try? Utility.launch(path: "/usr/bin/git", arguments: ["checkout", "."], currentDirectoryURL: directoryURL)
+            _ = try? Utility.launch(path: "/usr/bin/git", arguments: ["clean", "-f"], currentDirectoryURL: directoryURL)
             let fileNames = try! FileManager.default.contentsOfDirectory(atPath: patch.path).sorted()
             for fileName in fileNames {
                 _ = try? Utility.launch(path: "/usr/bin/git", arguments: ["apply", "\((patch + fileName).path)"], currentDirectoryURL: directoryURL)
