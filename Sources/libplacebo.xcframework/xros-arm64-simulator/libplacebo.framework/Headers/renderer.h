@@ -97,6 +97,13 @@ enum pl_lut_type {
     // LUT's tagged metadata, and otherwise falls back to PL_LUT_NATIVE.
 };
 
+enum pl_clear_mode {
+    PL_CLEAR_COLOR = 0, // set texture to a solid color
+    PL_CLEAR_TILES,     // set texture to a tiled pattern
+    PL_CLEAR_SKIP,      // skip the clearing pass (no-op)
+    PL_CLEAR_MODE_COUNT,
+};
+
 enum pl_render_stage {
     PL_RENDER_STAGE_FRAME,  // full frame redraws, for fresh/uncached frames
     PL_RENDER_STAGE_BLEND,  // the output blend pass (only for pl_render_image_mix)
@@ -240,25 +247,32 @@ struct pl_render_params {
     const struct pl_custom_lut *lut;
     enum pl_lut_type lut_type;
 
-    // If the image being rendered does not span the entire size of the target,
-    // it will be cleared explicitly using this background color (RGB). To
-    // disable this logic, set `skip_target_clearing`.
+    // Controls the image background. The default (PL_CLEAR_AUTO) is equivalent
+    // to PL_CLEAR_NONE, which passes through the alpha channel unmodified. (In
+    // the case of no alpha channel, this implicitly blends against black)
+    enum pl_clear_mode background;
+
+    // Controls how the remaining empty space in the target is filled up, when
+    // the image does not span the entire framebuffer. The default is equivalent
+    // to PL_CLEAR_COLOR, in which case empty space is automatically colored
+    // according to `background_color`.
+    enum pl_clear_mode border;
+
+    // The color to use for PL_CLEAR_COLOR.
+    //
+    // Note: Despite the name, this also affects `border = PL_CLEAR_COLOR`.
     float background_color[3];
     float background_transparency; // 0.0 for opaque, 1.0 for fully transparent
-    bool skip_target_clearing;
+
+    // The color and size to use for PL_CLEAR_TILES
+    float tile_colors[2][3];
+    int tile_size;
 
     // If set to a value above 0.0, the output will be rendered with rounded
     // corners, as if an alpha transparency mask had been applied. The value
     // indicates the relative fraction of the side length to round - a value
     // of 1.0 rounds the corners as much as possible.
     float corner_rounding;
-
-    // If true, then transparent images will made opaque by painting them
-    // against a checkerboard pattern consisting of alternating colors. If both
-    // colors are left as {0}, they default respectively to 93% and 87% gray.
-    bool blend_against_tiles;
-    float tile_colors[2][3];
-    int tile_size;
 
     // --- Performance / quality trade-off options:
     // These should generally be left off where quality is desired, as they can
@@ -343,11 +357,13 @@ struct pl_render_params {
     void *info_priv;
 
     // --- Deprecated/removed fields
-    bool allow_delayed_peak_detect PL_DEPRECATED; // moved to pl_peak_detect_params
-    const struct pl_icc_params *icc_params PL_DEPRECATED; // use pl_frame.icc
-    bool ignore_icc_profiles PL_DEPRECATED; // non-functional, just set pl_frame.icc to NULL
-    int lut_entries PL_DEPRECATED; // hard-coded as 256
-    float polar_cutoff PL_DEPRECATED; // hard-coded as 1e-3
+    PL_DEPRECATED_IN(v6.254) bool allow_delayed_peak_detect; // moved to pl_peak_detect_params
+    PL_DEPRECATED_IN(v6.327) const struct pl_icc_params *icc_params; // use pl_frame.icc
+    PL_DEPRECATED_IN(v6.328) bool ignore_icc_profiles; // non-functional, just set pl_frame.icc to NULL
+    PL_DEPRECATED_IN(v6.335) int lut_entries; // hard-coded as 256
+    PL_DEPRECATED_IN(v6.335) float polar_cutoff; // hard-coded as 1e-3
+    PL_DEPRECATED_IN(v7.346) bool skip_target_clearing; // `border_background = PL_BACKGROUND_NONE`
+    PL_DEPRECATED_IN(v7.346) bool blend_against_tiles; // `background = PL_BACKGROUND_TILES`
 };
 
 // Bare minimum parameters, with no features enabled. This is the fastest
@@ -657,6 +673,10 @@ static inline void pl_frame_clear(pl_gpu gpu, const struct pl_frame *frame,
     pl_frame_clear_rgba(gpu, frame, clear_color_rgba);
 }
 
+// Helper function to clear a frame to a fully tiled background.
+PL_API void pl_frame_clear_tiles(pl_gpu gpu, const struct pl_frame *frame,
+                                 const float tile_colors[2][3], int tile_size);
+
 // Helper functions to return the fixed/inferred pl_frame parameters used
 // for rendering internally. Mutates `image` and `target` in-place to hold
 // the modified values, which are what will actually be used for rendering.
@@ -839,8 +859,8 @@ PL_API extern const int pl_num_scale_filters; // excluding trailing {0}
 
 // Deprecated in favor of `pl_cache_save/pl_cache_load` on the `pl_cache`
 // associated with the `pl_gpu` this renderer is using.
-PL_DEPRECATED PL_API size_t pl_renderer_save(pl_renderer rr, uint8_t *out_cache);
-PL_DEPRECATED PL_API void pl_renderer_load(pl_renderer rr, const uint8_t *cache);
+PL_DEPRECATED_IN(v6.323) PL_API size_t pl_renderer_save(pl_renderer rr, uint8_t *out_cache);
+PL_DEPRECATED_IN(v6.323) PL_API void pl_renderer_load(pl_renderer rr, const uint8_t *cache);
 
 PL_API_END
 

@@ -31,6 +31,8 @@ extension Build {
 
 extension Build {
     static var ffmpegConfiguers = [String]()
+    static var isDebug = false
+
     static func performCommand(arguments: [String]) throws {
         print(arguments)
         if arguments.contains("h") || arguments.contains("-h") || arguments.contains("--help") {
@@ -53,7 +55,6 @@ extension Build {
         }
         FileManager.default.changeCurrentDirectoryPath(path.path)
         var librarys = [Library]()
-        var isFFmpegDebug = false
         for argument in arguments {
             if argument == "notRecompile" {
                 BaseBuild.notRecompile = true
@@ -62,7 +63,7 @@ extension Build {
             } else if argument == "disableGPL" {
                 BaseBuild.disableGPL = true
             } else if argument == "enable-debug" {
-                isFFmpegDebug = true
+                isDebug = true
             } else if argument.hasPrefix("platforms=") {
                 let values = String(argument.suffix(argument.count - "platforms=".count))
                 let platforms = values.split(separator: ",").compactMap {
@@ -83,7 +84,7 @@ extension Build {
                 Build.ffmpegConfiguers.append(argument)
             }
         }
-        if isFFmpegDebug {
+        if isDebug {
             Build.ffmpegConfiguers.append("--enable-debug")
             Build.ffmpegConfiguers.append("--enable-debug=3")
             Build.ffmpegConfiguers.append("--disable-stripping")
@@ -93,7 +94,7 @@ extension Build {
         }
 
         if librarys.isEmpty {
-            librarys.append(contentsOf: [.libshaderc, .vulkan, .lcms2, .libplacebo, .libdav1d, .gmp, .nettle, .gnutls, .readline, .libsmbclient, .libsrt, .libzvbi, .libfreetype, .libfribidi, .libharfbuzz, .libass, .libfontconfig, .libbluray, .libx265, .FFmpeg, .libmpv])
+            librarys.append(contentsOf: [.libshaderc, .vulkan, .lcms2, .libdav1d, .libplacebo, .gmp, .nettle, .gnutls, .libsrt, .libfreetype, .libfribidi, .libharfbuzz, .libfontconfig, .libass, .libzvbi, .libbluray, .libopus, .libx264, .libx265, .FFmpeg, .libmpv])
         }
         if BaseBuild.disableGPL {
             librarys.removeAll {
@@ -110,7 +111,7 @@ extension Build {
     static func printHelp() {
         print("""
         Usage: swift package BuildFFmpeg [OPTION]...
-        Default Build: swift package --disable-sandbox BuildFFmpeg enable-libshaderc enable-vulkan enable-lcms2 enable-libdav1d enable-libplacebo enable-gmp enable-nettle enable-gnutls enbale-readline enable-libsmbclient enable-libsrt enable-libzvbi enable-libfreetype enable-libfribidi enable-libharfbuzz enable-libass enable-FFmpeg enable-libmpv
+        Default Build: swift package --disable-sandbox BuildFFmpeg enable-libshaderc enable-vulkan enable-lcms2 enable-libdav1d enable-libplacebo enable-gmp enable-nettle enable-gnutls  enable-libsrt enable-libfreetype enable-libfribidi enable-libharfbuzz enable-libfontconfig enable-libass enable-libbluray enable-libzvbi enable-libopus enable-libx264 enable-libx265 enable-FFmpeg enable-libmpv
 
         Options:
             h, -h, --help       display this help and exit
@@ -131,8 +132,8 @@ extension Build {
             enable-libsrt       depend enable-openssl or enable-gnutls
             enable-libfreetype  build with libfreetype
             enable-libharfbuzz  depend enable-libfreetype
-            enable-libass       depend enable-libfreetype enable-libfribidi enable-libharfbuzz
             enable-libfontconfig depend enable-libfreetype
+            enable-libass       depend enable-libfreetype enable-libfribidi enable-libharfbuzz enable-libfontconfig
             enable-libbluray    depend enable-libfreetype enable-libfontconfig
             enable-libzvbi      build with libzvbi
             enable-FFmpeg       build with FFmpeg
@@ -143,23 +144,23 @@ extension Build {
 }
 
 enum Library: String, CaseIterable {
-    case libglslang, libshaderc, vulkan, lcms2, libdovi, libdav1d, libplacebo, libfreetype, libharfbuzz, libfribidi, libass, gmp, readline, nettle, gnutls, libsmbclient, libsrt, libzvbi, libfontconfig, libbluray, libx264, libx265, FFmpeg, libmpv, openssl, libtls, boringssl, libpng, libupnp, libnfs, libsmb2
+    case libglslang, libshaderc, vulkan, lcms2, libdovi, libdav1d, libplacebo, libfreetype, libharfbuzz, libfribidi, libass, gmp, readline, nettle, gnutls, libsmbclient, libsrt, libzvbi, libfontconfig, libbluray, libopus, libx264, libx265, FFmpeg, libmpv, openssl, libtls, boringssl, libpng, libupnp, libnfs, libsmb2, libarchive
     var version: String {
         switch self {
         case .FFmpeg:
-            return "n7.0.1"
+            return "n7.1"
         case .libfreetype:
-            return "VER-2-13-2"
+            return "VER-2-13-3"
         case .libfribidi:
-            return "v1.0.12"
+            return "v1.0.16"
         case .libharfbuzz:
-            return "5.3.1"
+            return "10.0.1"
         case .libass:
             return "0.17.3"
         case .libpng:
-            return "v1.6.43"
+            return "v1.6.44"
         case .libmpv:
-            return "v0.38.0"
+            return "v0.39.0"
         case .openssl:
             return "openssl-3.3.0"
         case .libsrt:
@@ -167,13 +168,14 @@ enum Library: String, CaseIterable {
         case .libsmbclient:
             return "samba-4.15.13"
         case .gnutls:
-            return "3.8.5"
+            // 3.8.7会有一个编译错误。需要等待3.8.8版本
+            return "3.8.6"
         case .nettle:
-            return "nettle_3.9.1_release_20230601"
+            return "nettle_3.10_release_20240616"
         case .libdav1d:
             return "1.4.3"
         case .gmp:
-            return "v6.2.1"
+            return "6.3.0"
         case .libtls:
             return "OPENBSD_7_3"
         case .libzvbi:
@@ -181,11 +183,11 @@ enum Library: String, CaseIterable {
         case .boringssl:
             return "master"
         case .libplacebo:
-            return "v6.338.2"
+            return "v7.349.0"
         case .vulkan:
-            return "v1.2.8"
+            return "v1.2.11"
         case .libshaderc:
-            return "v2024.0"
+            return "v2024.3"
         case .readline:
             return "readline-8.2"
         case .libglslang:
@@ -208,6 +210,10 @@ enum Library: String, CaseIterable {
             return "3.6"
         case .libx264:
             return "stable"
+        case .libarchive:
+            return "v3.7.4"
+        case .libopus:
+            return "v1.5.2"
         }
     }
 
@@ -224,7 +230,7 @@ enum Library: String, CaseIterable {
         case .nettle:
             return "https://git.lysator.liu.se/nettle/nettle"
         case .gmp:
-            return "https://github.com/alisw/GMP"
+            return "https://github.com/kingslay/GMP"
         case .libdav1d:
             return "https://github.com/videolan/dav1d"
         case .libtls:
@@ -261,9 +267,11 @@ enum Library: String, CaseIterable {
             return "https://code.videolan.org/videolan/x264"
         case .libx265:
             return "https://bitbucket.org/multicoreware/x265_git/src/master/"
+        case .libopus:
+            return "https://github.com/xiph/opus"
         default:
             var value = rawValue
-            if self != .libass, value.hasPrefix("lib") {
+            if self != .libass, self != .libarchive, value.hasPrefix("lib") {
                 value = String(value.dropFirst(3))
             }
             return "https://github.com/\(value)/\(value)"
@@ -272,7 +280,7 @@ enum Library: String, CaseIterable {
 
     var isGPL: Bool {
         switch self {
-        case .libsmbclient, .libx264, .libx265, .readline:
+        case .readline, .libsmbclient, .libx264, .libx265:
             return true
         default:
             return false
@@ -281,7 +289,7 @@ enum Library: String, CaseIterable {
 
     var isFFmpegDependentLibrary: Bool {
         switch self {
-        case .openssl, .readline, .nettle, .libmpv, .boringssl, .libpng, .libupnp, .libnfs, .libsmb2:
+        case .openssl, .readline, .nettle, .libmpv, .boringssl, .libpng, .libupnp, .libnfs, .libsmb2, .libarchive:
             return false
         default:
             if BaseBuild.disableGPL {
@@ -355,6 +363,10 @@ enum Library: String, CaseIterable {
             return BuildX265()
         case .libx264:
             return BuildX264()
+        case .libarchive:
+            return BuildArchive()
+        case .libopus:
+            return BuildOpus()
         }
     }
 }
@@ -383,7 +395,9 @@ class BaseBuild {
         }
         let patch = URL.currentDirectory + "../Plugins/BuildFFmpeg/patch/\(library.rawValue)"
         if FileManager.default.fileExists(atPath: patch.path) {
-            _ = try? Utility.launch(path: "/usr/bin/git", arguments: ["stash"], currentDirectoryURL: directoryURL)
+            // 解决新增的文件，无法删除的问题
+            _ = try? Utility.launch(path: "/usr/bin/git", arguments: ["checkout", "."], currentDirectoryURL: directoryURL)
+            _ = try? Utility.launch(path: "/usr/bin/git", arguments: ["clean", "-f"], currentDirectoryURL: directoryURL)
             let fileNames = try! FileManager.default.contentsOfDirectory(atPath: patch.path).sorted()
             for fileName in fileNames {
                 _ = try? Utility.launch(path: "/usr/bin/git", arguments: ["apply", "\((patch + fileName).path)"], currentDirectoryURL: directoryURL)
@@ -465,7 +479,7 @@ class BaseBuild {
             var arguments = [
                 makeLists.path,
                 "-DCMAKE_VERBOSE_MAKEFILE=0",
-                "-DCMAKE_BUILD_TYPE=Release",
+                "-DCMAKE_BUILD_TYPE=\(Build.isDebug ? "Debug" : "Release")",
                 "-DCMAKE_OSX_SYSROOT=\(platform.sdk.lowercased())",
                 "-DCMAKE_OSX_ARCHITECTURES=\(arch.rawValue)",
                 "-DCMAKE_INSTALL_PREFIX=\(thinDirPath)",
@@ -654,8 +668,7 @@ class BaseBuild {
         }
     }
 
-    func createFrameworkLib(framework: String, platform: PlatformType, frameworkDir _: URL) throws {
-        let frameworkDir = URL.currentDirectory + [library.rawValue, platform.rawValue, "\(framework).framework"]
+    func createFrameworkLib(framework: String, platform: PlatformType, frameworkDir: URL) throws {
         var arguments = ["-create"]
         for arch in platform.architectures {
             let prefix = thinDir(platform: platform, arch: arch)
@@ -780,7 +793,7 @@ class BaseBuild {
 
         [built-in options]
         default_library = 'static'
-        buildtype = 'release'
+        buildtype = '\(Build.isDebug ? "debug" : "release")'
         prefix = '\(prefix.path)'
         c_args = [\(cFlags)]
         cpp_args = [\(cFlags)]
@@ -1200,6 +1213,17 @@ class BuildSMB2: BaseBuild {
     }
 }
 
+class BuildArchive: BaseBuild {
+    init() {
+        super.init(library: .libarchive)
+    }
+
+    override func arguments(platform _: PlatformType, arch _: ArchType) -> [String] {
+        var arg = ["-DENABLE_TEST=0"]
+        return arg
+    }
+}
+
 class BuildX265: BaseBuild {
     init() {
         super.init(library: .libx265)
@@ -1246,5 +1270,15 @@ class BuildX264: BaseBuild {
             arg.append("--disable-asm")
         }
         return arg
+    }
+}
+
+class BuildOpus: BaseBuild {
+    init() {
+        super.init(library: .libopus)
+        let autogen = directoryURL + "autogen.sh"
+        if FileManager.default.fileExists(atPath: autogen.path) {
+            try? Utility.launch(executableURL: autogen, arguments: [], currentDirectoryURL: directoryURL, environment: [:])
+        }
     }
 }

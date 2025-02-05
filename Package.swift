@@ -18,11 +18,13 @@ let package = Package(
         .library(name: "Libavutil", targets: ["Libavutil"]),
         .library(name: "Libswresample", targets: ["Libswresample"]),
         .library(name: "Libswscale", targets: ["Libswscale"]),
-        .library(name: "libass", targets: ["libfreetype", "libfribidi", "libharfbuzz", "libass"]),
+        .library(name: "libass", targets: ["libfreetype", "libfribidi", "libharfbuzz", "libfontconfig", "libass"]),
         .library(name: "libmpv", targets: ["FFmpegKit", "libass", "libmpv"]),
-        .executable(name: "ffmpeg", targets: ["ffmpeg"]),
+        .library(name: "ffmpeg", targets: ["ffmpeg"]),
+        .library(name: "ffprobe", targets: ["ffprobe"]),
         .executable(name: "ffplay", targets: ["ffplay"]),
-        .executable(name: "ffprobe", targets: ["ffprobe"]),
+        .executable(name: "ffmpegCmd", targets: ["ffmpegCmd"]),
+        .executable(name: "ffprobeCmd", targets: ["ffprobeCmd"]),
         .plugin(name: "BuildFFmpeg", targets: ["BuildFFmpeg"]),
     ],
     dependencies: [
@@ -41,6 +43,7 @@ let package = Package(
                 "libsrt",
                 "libfreetype", "libfribidi", "libharfbuzz", "libass",
                 "libfontconfig",
+                "libopus",
                 .target(name: "libbluray", condition: .when(platforms: [.macOS])),
                 "gmp", "nettle", "hogweed", "gnutls",
 //                "libsmbclient",
@@ -97,16 +100,28 @@ let package = Package(
                 .define("VK_ENABLE_BETA_EXTENSIONS"),
             ]
         ),
-        .executableTarget(
+        .target(
+            name: "ffmpeg",
+            dependencies: [
+                "fftools",
+            ]
+        ),
+        .target(
             name: "ffprobe",
             dependencies: [
                 "fftools",
             ]
         ),
         .executableTarget(
-            name: "ffmpeg",
+            name: "ffprobeCmd",
             dependencies: [
-                "fftools",
+                "ffprobe",
+            ]
+        ),
+        .executableTarget(
+            name: "ffmpegCmd",
+            dependencies: [
+                "ffmpeg",
             ]
         ),
         .systemLibrary(
@@ -212,6 +227,10 @@ let package = Package(
         .binaryTarget(
             name: "libmpv",
             path: "Sources/libmpv.xcframework"
+        ),
+        .binaryTarget(
+            name: "libopus",
+            path: "Sources/libopus.xcframework"
         ),
         .binaryTarget(
             name: "gmp",

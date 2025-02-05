@@ -22,7 +22,7 @@ jobs:
       - name: BuildFFmpeg
         run: swift package BuildFFmpeg  -h
       - name: ffprobe
-        run: swift run ffprobe -h 
+        run: swift run ffprobeCmd -h 
       - name: pod install
         run: |
           cd Demo

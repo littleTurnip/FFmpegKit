@@ -1,0 +1,25 @@
+diff --git forkSrcPrefix/libavformat/hls.c forkDstPrefix/libavformat/hls.c
+index 62473a15ddb5690172ae9caee61cefc004b6b3af..476157a08285bb0983b94a43a28ef9f43f480333 100644
+--- forkSrcPrefix/libavformat/hls.c
++++ forkDstPrefix/libavformat/hls.c
+@@ -2550,13 +2550,13 @@ static int hls_probe(const AVProbeData *p)
+             av_strcasecmp(p->mime_type, "application/x-mpegurl")
+             );
+ 
+-        if (!mime_ok &&
+-            !mime_x &&
+-            !av_match_ext    (p->filename, "m3u8,m3u") &&
+-             ff_match_url_ext(p->filename, "m3u8,m3u") <= 0) {
+-            av_log(NULL, AV_LOG_ERROR, "Not detecting m3u8/hls with non standard extension and non standard mime type\n");
+-            return 0;
+-        }
++        // if (!mime_ok &&
++        //     !mime_x &&
++        //     !av_match_ext    (p->filename, "m3u8,m3u") &&
++        //      ff_match_url_ext(p->filename, "m3u8,m3u") <= 0) {
++        //     av_log(NULL, AV_LOG_ERROR, "Not detecting m3u8/hls with non standard extension and non standard mime type\n");
++        //     return 0;
++        // }
+         if (mime_x)
+             av_log(NULL, AV_LOG_WARNING, "mime type is not rfc8216 compliant\n");
+ 

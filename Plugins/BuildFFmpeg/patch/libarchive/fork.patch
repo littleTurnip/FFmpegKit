@@ -1,0 +1,40 @@
+diff --git forkSrcPrefix/libarchive/filter_fork_posix.c forkDstPrefix/libarchive/filter_fork_posix.c
+index c895c08e59b3366f6f4e36b7e66bc7a27f51f23f..aa1e0d4b566207fc07c993aa8c6f2f5524a65f77 100644
+--- forkSrcPrefix/libarchive/filter_fork_posix.c
++++ forkDstPrefix/libarchive/filter_fork_posix.c
+@@ -25,6 +25,12 @@
+  */
+ 
+ #include "archive_platform.h"
++#include <TargetConditionals.h>
++
++#if TARGET_OS_TV
++#undef HAVE_POSIX_SPAWNP
++#undef HAVE_VFORK
++#endif
+ 
+ /* This capability is only available on POSIX systems. */
+ #if defined(HAVE_PIPE) && defined(HAVE_FCNTL) && \
+@@ -147,7 +153,11 @@ __archive_create_child(const char *cmd, int *child_stdin, int *child_stdout,
+ #if HAVE_VFORK
+ 	child = vfork();
+ #else
+-	child = fork();
++#ifdef TARGET_OS_TV
++    child = -1;
++#else
++    child = fork();
++#endif
+ #endif
+ 	if (child == -1)
+ 		goto stdout_opened;
+@@ -162,7 +172,9 @@ __archive_create_child(const char *cmd, int *child_stdin, int *child_stdout,
+ 			_exit(254);
+ 		if (stdout_pipe[1] != 1 /* stdout */)
+ 			close(stdout_pipe[1]);
++#ifndef TARGET_OS_TV
+ 		execvp(cmdline->path, cmdline->argv);
++#endif
+ 		_exit(254);
+ 	}
+ #endif /* HAVE_POSIX_SPAWNP */
