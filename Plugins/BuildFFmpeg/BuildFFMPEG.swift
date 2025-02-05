@@ -94,7 +94,7 @@ class BuildFFMPEG: BaseBuild {
             try ["compat", "libavdevice", "libpostproc"].forEach { name in
                 try FileManager.default.createDirectory(at: fftoolsFile + "include/\(name)", withIntermediateDirectories: true)
             }
-            try FileManager.default.copyItem(at: buildURL + "src/compat/stdbit/stdbit.h", to: fftoolsFile + "include/stdbit.h")
+            try? FileManager.default.copyItem(at: buildURL + "src/compat/stdbit/stdbit.h", to: fftoolsFile + "include/stdbit.h")
             try ["config.h", "config_components.h"].forEach { name in
                 try FileManager.default.copyItem(at: buildURL + name, to: fftoolsFile + "include/\(name)")
             }
